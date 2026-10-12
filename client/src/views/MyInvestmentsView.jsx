@@ -331,7 +331,7 @@ export default function MyInvestmentsView({ onNavigate }) {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {(!inv.withdrawalStatus || inv.withdrawalStatus === 'rejected') && (
+                          {inv.investmentType === 'business' && (!inv.withdrawalStatus || inv.withdrawalStatus === 'rejected') && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -495,8 +495,8 @@ export default function MyInvestmentsView({ onNavigate }) {
               )}
             </div>
 
-            {/* Quick Action Button in modal */}
-            {(!selectedInvestment.withdrawalStatus || selectedInvestment.withdrawalStatus === 'rejected') && (
+            {/* Quick Action Button in modal (Business Investments Only) */}
+            {selectedInvestment.investmentType === 'business' && (!selectedInvestment.withdrawalStatus || selectedInvestment.withdrawalStatus === 'rejected') && (
               <button
                 onClick={() => {
                   const inv = selectedInvestment;

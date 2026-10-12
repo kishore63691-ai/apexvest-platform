@@ -290,7 +290,10 @@ function getInitialData() {
       supportEmail: 'compliance@growcapital.in',
       supportPhone: '+91 80 4910 8800',
       minLotSize: 10,
-      disclaimerNotice: 'Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding.'
+      disclaimerNotice: 'Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding.',
+      razorpayKeyId: 'rzp_test_1DP5mmOlF5G5ag',
+      razorpayKeySecret: 's8Yd3p4lFj3n9Z1x7q2k5m0b',
+      razorpayEnabled: true
     }
   };
 }
@@ -435,53 +438,36 @@ class Database {
     // Confirmed user investments for this campaign
     const records = data.user_investments.filter(ui => ui.investmentId === investmentId);
     
-    // Group by unique user to calculate user-level aggregations
-    const userTotals = new Map();
+    // Group by unique user: show aggregate at final draw pool and show ONLY ONE entry per user
+    const userMap = new Map();
     records.forEach(r => {
       const u = data.users.find(user => user.id === r.userId);
-      if (!userTotals.has(r.userId)) {
-        userTotals.set(r.userId, {
+      if (!userMap.has(r.userId)) {
+        userMap.set(r.userId, {
           userId: r.userId,
           name: u?.name || 'Investor',
           email: u?.email || '',
           mobile: u?.mobile || '',
           totalInvested: 0,
           totalLots: 0,
-          investmentCount: 0
+          investmentCount: 0,
+          purchases: []
         });
       }
-      const existing = userTotals.get(r.userId);
+      const existing = userMap.get(r.userId);
       existing.totalInvested += Number(r.amount);
       existing.totalLots += Number(r.lots);
       existing.investmentCount += 1;
-    });
-
-    // Return individual entries (tickets) so repeat buyers have multiple entries in the pool
-    // Each entry has the user's details, ticket number, purchase amount, and their user totals
-    const entries = records.map((r, index) => {
-      const uTotals = userTotals.get(r.userId);
-      return {
-        ticketIndex: index + 1,
-        userInvestmentId: r.id,
-        userId: r.userId,
-        name: uTotals?.name || 'Investor',
-        email: uTotals?.email || '',
-        mobile: uTotals?.mobile || '',
-        ticketAmount: Number(r.amount),
-        ticketLots: Number(r.lots),
-        purchaseDate: r.purchaseDate,
+      existing.purchases.push({
+        id: r.id,
+        amount: Number(r.amount),
+        lots: Number(r.lots),
         transactionId: r.transactionId,
-        // Aggregated totals for this user across all their purchases
-        totalInvestedForUser: uTotals?.totalInvested || Number(r.amount),
-        totalLotsForUser: uTotals?.totalLots || Number(r.lots),
-        userPurchaseCount: uTotals?.investmentCount || 1,
-        // Common fields for compatibility
-        totalInvested: Number(r.amount),
-        totalLots: Number(r.lots)
-      };
+        date: r.purchaseDate
+      });
     });
 
-    return entries;
+    return Array.from(userMap.values());
   }
 
   drawInvestmentWinner(investmentId, adminId) {
@@ -489,29 +475,40 @@ class Database {
     const inv = data.investments.find(i => i.id === investmentId);
     if (!inv) throw new Error('Investment not found');
 
+    if (inv.type === 'business') {
+      throw new Error('Lucky draw pools are exclusive to Commodity Asset investments. Business investments do not have draw pools.');
+    }
+
     if (inv.status !== 'fully_funded' && inv.raisedAmount < inv.targetAmount) {
       throw new Error('Lucky draw can only be conducted once the target amount is reached (100% funded).');
     }
 
-    const eligibleTickets = this.getInvestmentInvestors(investmentId);
-    if (eligibleTickets.length === 0) {
+    const uniqueInvestors = this.getInvestmentInvestors(investmentId);
+    if (uniqueInvestors.length === 0) {
       throw new Error('No confirmed investors found for this investment.');
     }
 
-    // Pick a random ticket from all entries (where repeat buyers have multiple chances)
-    const randomIndex = Math.floor(Math.random() * eligibleTickets.length);
-    const winningTicket = eligibleTickets[randomIndex];
+    // Weighted random pool: each purchase adds 1 chance for that investor
+    const weightedPool = [];
+    uniqueInvestors.forEach(investor => {
+      const tickets = Math.max(1, investor.investmentCount || 1);
+      for (let i = 0; i < tickets; i++) {
+        weightedPool.push(investor);
+      }
+    });
+
+    const randomIndex = Math.floor(Math.random() * weightedPool.length);
+    const winnerInvestor = weightedPool[randomIndex];
     const amountWon = Number(inv.targetAmount || inv.raisedAmount);
 
     inv.winner = {
-      userId: winningTicket.userId,
-      winningTicketIndex: winningTicket.ticketIndex,
-      winningUserInvestmentId: winningTicket.userInvestmentId,
-      userName: winningTicket.name,
-      userEmail: winningTicket.email,
-      userMobile: winningTicket.mobile,
-      totalLots: winningTicket.totalLotsForUser,
-      totalInvested: winningTicket.totalInvestedForUser,
+      userId: winnerInvestor.userId,
+      userName: winnerInvestor.name,
+      userEmail: winnerInvestor.email,
+      userMobile: winnerInvestor.mobile,
+      totalLots: winnerInvestor.totalLots,
+      totalInvested: winnerInvestor.totalInvested,
+      investmentCount: winnerInvestor.investmentCount,
       amountWon: amountWon,
       selectedAt: new Date().toISOString(),
       selectedBy: adminId,
@@ -525,24 +522,22 @@ class Database {
     // User notification for winner
     data.notifications.unshift({
       id: `NOTIF-WIN-${Date.now()}`,
-      userId: winningTicket.userId,
+      userId: winnerInvestor.userId,
       title: '🏆 You Have Won the Full Target Jackpot!',
-      message: `Congratulations ${winningTicket.name}! Your ticket (#${winningTicket.ticketIndex}) was randomly selected as the lucky winner for "${inv.title}"! Full payout of ₹${amountWon.toLocaleString('en-IN')} will be transferred to you. Check status in your dashboard.`,
+      message: `Congratulations ${winnerInvestor.name}! You were randomly selected as the lucky winner for "${inv.title}"! Full payout of ₹${amountWon.toLocaleString('en-IN')} will be transferred to you. Check status in your dashboard.`,
       type: 'success',
       isRead: false,
       createdAt: new Date().toISOString()
     });
 
-    // Notify other investors (send once per unique user)
-    const notifiedUsers = new Set([winningTicket.userId]);
-    eligibleTickets.forEach(ticket => {
-      if (!notifiedUsers.has(ticket.userId)) {
-        notifiedUsers.add(ticket.userId);
+    // Notify other investors (each unique user once)
+    uniqueInvestors.forEach(invUser => {
+      if (invUser.userId !== winnerInvestor.userId) {
         data.notifications.unshift({
-          id: `NOTIF-DRAW-${Date.now()}-${ticket.userId}`,
-          userId: ticket.userId,
+          id: `NOTIF-DRAW-${Date.now()}-${invUser.userId}`,
+          userId: invUser.userId,
           title: `Lucky Draw Winner Announced: ${inv.title}`,
-          message: `The random winner for ${inv.title} has been drawn: ${winningTicket.name}. Payout proof will be published by Admin.`,
+          message: `The random winner for ${inv.title} has been drawn: ${winnerInvestor.name}. Payout proof will be published by Admin.`,
           type: 'info',
           isRead: false,
           createdAt: new Date().toISOString()
@@ -815,6 +810,13 @@ class Database {
     const userInv = data.user_investments.find(ui => ui.id === userInvestmentId && ui.userId === userId);
     if (!userInv) throw new Error('Investment holding not found.');
 
+    const liveInvestments = data.investments;
+    const liveItem = liveInvestments.find(i => i.id === userInv.investmentId);
+
+    if (liveItem && (liveItem.type === 'commodity' || liveItem.type === 'community')) {
+      throw new Error('Withdrawal requests are only available for Business investments after tenure completion. Commodity Asset Reserves participate in 100% Target Lucky Draw Pools.');
+    }
+
     if (userInv.withdrawalStatus === 'pending') {
       throw new Error('A withdrawal request is already pending for this investment.');
     }
@@ -822,12 +824,8 @@ class Database {
       throw new Error('Funds for this investment have already been withdrawn and disbursed.');
     }
 
-    const liveInvestments = data.investments;
-    const liveItem = liveInvestments.find(i => i.id === userInv.investmentId);
     const currentRate = liveItem ? liveItem.rate : userInv.currentRate;
-    const currentValue = liveItem && (liveItem.type === 'commodity' || liveItem.type === 'community')
-      ? Number((userInv.lots * currentRate).toFixed(2))
-      : Number(userInv.currentValue || userInv.amount);
+    const currentValue = Number(userInv.currentValue || userInv.amount);
 
     const user = data.users.find(u => u.id === userId);
 
@@ -970,6 +968,110 @@ class Database {
 
     this.write(data);
     return wdr;
+  }
+
+  // --- Razorpay Payment Capture ---
+  recordRazorpayInvestment({
+    userId,
+    userName,
+    userEmail,
+    investmentId,
+    amount,
+    razorpayPaymentId,
+    razorpayOrderId
+  }) {
+    const data = this.read();
+    const investment = data.investments.find(i => i.id === investmentId);
+    if (!investment) throw new Error('Investment opportunity not found');
+
+    const numAmount = Number(amount);
+    const lots = investment.type === 'business'
+      ? Math.floor(numAmount / investment.rate)
+      : Number((numAmount / investment.rate).toFixed(4));
+
+    // 1. Create confirmed payment record
+    const paymentId = `PAY-RZP-${Date.now().toString().slice(-5)}`;
+    const newPayment = {
+      id: paymentId,
+      userId,
+      userName,
+      userEmail,
+      investmentId: investment.id,
+      investmentTitle: investment.title,
+      investmentType: investment.type,
+      amount: numAmount,
+      lots,
+      rateAtInvestment: investment.rate,
+      transactionId: razorpayPaymentId,
+      orderId: razorpayOrderId || null,
+      paymentMethod: 'razorpay',
+      paymentDate: new Date().toISOString().split('T')[0],
+      screenshotUrl: null,
+      status: 'confirmed',
+      adminNotes: 'Auto-verified & captured via Razorpay Payment Gateway',
+      createdAt: new Date().toISOString(),
+      verifiedAt: new Date().toISOString(),
+      verifiedBy: 'RAZORPAY_GATEWAY'
+    };
+    data.payments.unshift(newPayment);
+
+    // 2. Update investment raisedAmount and investorCount
+    investment.raisedAmount = Math.min(
+      Number(investment.targetAmount),
+      (Number(investment.raisedAmount) || 0) + numAmount
+    );
+    investment.investorCount = (investment.investorCount || 0) + 1;
+    if (investment.raisedAmount >= investment.targetAmount) {
+      investment.status = 'fully_funded';
+    }
+
+    // 3. Create confirmed User Investment Record
+    const userInvestmentId = `INV-${Date.now().toString().slice(-5)}`;
+    const currentRate = investment.rate;
+    const newUserInvestment = {
+      id: userInvestmentId,
+      userId,
+      investmentId: investment.id,
+      investmentTitle: investment.title,
+      investmentType: investment.type,
+      paymentId: newPayment.id,
+      transactionId: razorpayPaymentId,
+      amount: numAmount,
+      lots,
+      rateAtInvestment: currentRate,
+      purchaseDate: new Date().toISOString(),
+      currentRate,
+      currentValue: Number((lots * currentRate).toFixed(2)),
+      paymentMethod: 'razorpay',
+      adminProofUrl: null,
+      adminNotes: 'Payment verified & captured via Razorpay Gateway',
+      status: 'confirmed'
+    };
+    data.user_investments.unshift(newUserInvestment);
+
+    // 4. Notifications
+    data.notifications.unshift({
+      id: `NOTIF-${Date.now()}`,
+      userId,
+      title: 'Investment Confirmed via Razorpay 🎉',
+      message: `Your investment of ₹${numAmount.toLocaleString('en-IN')} in ${investment.title} was successfully captured via Razorpay! (Ref: ${razorpayPaymentId})`,
+      type: 'success',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    data.notifications.unshift({
+      id: `NOTIF-ADMIN-${Date.now()}`,
+      userId: 'admin',
+      title: 'New Razorpay Investment Captured',
+      message: `${userName} invested ₹${numAmount.toLocaleString('en-IN')} in ${investment.title} via Razorpay (Ref: ${razorpayPaymentId}).`,
+      type: 'info',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    this.write(data);
+    return { payment: newPayment, userInvestment: newUserInvestment, investment };
   }
 }
 

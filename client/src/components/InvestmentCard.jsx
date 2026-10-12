@@ -97,8 +97,8 @@ export default function InvestmentCard({ investment, onInvest }) {
             </p>
           </div>
 
-          {/* Lucky Winner Highlight Banner if Target Reached */}
-          {winner && (
+          {/* Lucky Winner Highlight Banner if Target Reached (Commodity Only) */}
+          {!isBusiness && winner && (
             <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border border-amber-500/40 text-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-amber-300 font-bold">
@@ -117,6 +117,14 @@ export default function InvestmentCard({ investment, onInvest }) {
                 <Eye className="w-3.5 h-3.5" />
                 <span>View Payout Proof & Winner Certificate</span>
               </button>
+            </div>
+          )}
+
+          {/* Business Funding Completion Banner */}
+          {isBusiness && isFullyFunded && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center gap-2 text-emerald-300">
+              <Building className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>100% Capital Raised • Active Business Operations & Quarterly Yields</span>
             </div>
           )}
 
@@ -150,7 +158,7 @@ export default function InvestmentCard({ investment, onInvest }) {
                   ₹{Number(investment.raisedAmount).toLocaleString('en-IN')} / ₹{Number(investment.targetAmount).toLocaleString('en-IN')}
                 </span>
               </div>
-              <span className={`font-bold text-xs ${isFullyFunded ? 'text-amber-400' : 'text-emerald-400'}`}>
+              <span className={`font-bold text-xs ${isFullyFunded ? (isBusiness ? 'text-emerald-400' : 'text-amber-400') : 'text-emerald-400'}`}>
                 {progress}%
               </span>
             </div>
@@ -159,7 +167,7 @@ export default function InvestmentCard({ investment, onInvest }) {
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
                   progress >= 100
-                    ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
+                    ? (isBusiness ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-yellow-400')
                     : 'bg-gradient-to-r from-emerald-500 to-teal-400'
                 }`}
                 style={{ width: `${progress}%` }}
@@ -193,9 +201,9 @@ export default function InvestmentCard({ investment, onInvest }) {
                   <Lock className="w-4 h-4" />
                   <span>Target Reached • Investments Closed</span>
                 </button>
-                {!winner && (
+                {!isBusiness && !winner && (
                   <p className="text-[10px] text-center text-amber-400 font-semibold animate-pulse">
-                    🎲 Target reached! Lucky Draw is being conducted.
+                    🎲 Target reached! Lucky Draw is being conducted for this Commodity Reserve.
                   </p>
                 )}
               </div>

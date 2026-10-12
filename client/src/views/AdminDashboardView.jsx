@@ -703,7 +703,8 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
   const pendingPayments = payments.filter(p => p.status === 'pending');
   const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
   const fullyFundedCampaigns = investments.filter(
-    i => i.status === 'fully_funded' || (i.raisedAmount && i.raisedAmount >= i.targetAmount)
+    i => (i.type === 'commodity' || i.type === 'community') &&
+         (i.status === 'fully_funded' || (i.raisedAmount && i.raisedAmount >= i.targetAmount))
   );
 
   const filteredCatalog = investments.filter(item => {
@@ -1114,8 +1115,8 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                               {isTargetReached ? 'TARGET REACHED (CLOSED)' : item.status.toUpperCase()}
                             </span>
 
-                            {/* Lucky Draw Button if Target Reached */}
-                            {isTargetReached && (
+                            {/* Lucky Draw Button if Target Reached (Commodities Only) */}
+                            {isTargetReached && (item.type === 'commodity' || item.type === 'community') && (
                               item.winner ? (
                                 <div className="flex items-center gap-1">
                                   <span className="text-[10px] font-bold text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
@@ -1184,13 +1185,13 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
             <div>
               <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-1">
                 <Trophy className="w-4 h-4" />
-                <span>Target Reached • Full Amount Jackpot Payout</span>
+                <span>Commodity Asset Reserves • Full Amount Jackpot Payout</span>
               </div>
               <h2 className="text-xl font-black text-white">
-                Lucky Draw Management & Payout Proofs
+                Commodity Lucky Draw Management & Payout Proofs
               </h2>
               <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-                When an investment campaign reaches 100% of its target funding amount, new investments are closed. Conduct the random draw among confirmed investors to award the full target pool, and upload the bank transfer proof receipt for complete investor transparency.
+                When a commodity asset reserve campaign reaches 100% of its target funding amount, new investments are closed. Conduct the random draw among confirmed investors to award the full target pool, and upload the bank transfer proof receipt for complete investor transparency. (Business investments do not have draw pools).
               </p>
             </div>
           </div>
@@ -1887,37 +1888,88 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
           <div>
             <h2 className="text-lg font-bold text-white">Platform Payment Rails Settings</h2>
             <p className="text-xs text-slate-400">
-              Configure the company UPI ID and Payee Name rendered on the investor QR payment screen.
+              Configure the company UPI ID, Payee Name, and online Razorpay payment gateway credentials.
             </p>
           </div>
 
           <form onSubmit={handleSaveSettings} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Company Admin UPI ID (VPA)
-              </label>
-              <input
-                type="text"
-                required
-                value={settings.upiId || ''}
-                onChange={(e) => setSettings({ ...settings, upiId: e.target.value })}
-                placeholder="growcapital@icici"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-amber-500"
-              />
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
+              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Landmark className="w-3.5 h-3.5" />
+                <span>UPI Payment Configuration</span>
+              </h3>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Company Admin UPI ID (VPA)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.upiId || ''}
+                  onChange={(e) => setSettings({ ...settings, upiId: e.target.value })}
+                  placeholder="growcapital@icici"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Payee Legal Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.payeeName || ''}
+                  onChange={(e) => setSettings({ ...settings, payeeName: e.target.value })}
+                  placeholder="Apex Capital Ventures Ltd"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Payee Legal Name
-              </label>
-              <input
-                type="text"
-                required
-                value={settings.payeeName || ''}
-                onChange={(e) => setSettings({ ...settings, payeeName: e.target.value })}
-                placeholder="Apex Capital Ventures Ltd"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-              />
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Razorpay Gateway Configuration</span>
+                </h3>
+                <label className="flex items-center gap-2 cursor-pointer text-xs">
+                  <span className="text-slate-400">Gateway Active:</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.razorpayEnabled !== false}
+                    onChange={(e) => setSettings({ ...settings, razorpayEnabled: e.target.checked })}
+                    className="w-4 h-4 accent-emerald-500 rounded"
+                  />
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Razorpay Key ID
+                </label>
+                <input
+                  type="text"
+                  value={settings.razorpayKeyId || ''}
+                  onChange={(e) => setSettings({ ...settings, razorpayKeyId: e.target.value })}
+                  placeholder="rzp_test_..."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Found in your Razorpay Dashboard → Settings → API Keys.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Razorpay Key Secret
+                </label>
+                <input
+                  type="password"
+                  value={settings.razorpayKeySecret || ''}
+                  onChange={(e) => setSettings({ ...settings, razorpayKeySecret: e.target.value })}
+                  placeholder="••••••••••••••••"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                />
+              </div>
             </div>
 
             <button
@@ -2295,10 +2347,10 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
               <div className="flex items-center justify-between mb-2 text-xs">
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-emerald-400" />
-                  Eligible Draw Entries & Tickets ({drawInvestors.length})
+                  Eligible Unique Investors ({drawInvestors.length})
                 </span>
                 <span className="text-[11px] text-amber-400 font-semibold">
-                  Multi-purchase tickets included
+                  Aggregated draw pool (1 entry per user)
                 </span>
               </div>
 
@@ -2306,32 +2358,30 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                 {drawInvestors.length === 0 ? (
                   <p className="p-4 text-center text-slate-500 text-xs">Loading confirmed participants...</p>
                 ) : (
-                  drawInvestors.map((ticket, idx) => (
-                    <div key={ticket.userInvestmentId || idx} className="pt-2 first:pt-0 flex items-center justify-between text-xs">
+                  drawInvestors.map((investor, idx) => (
+                    <div key={investor.userId || idx} className="pt-2 first:pt-0 flex items-center justify-between text-xs">
                       <div className="flex items-start gap-2">
                         <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold shrink-0 mt-0.5">
-                          #{ticket.ticketIndex || idx + 1}
+                          #{idx + 1}
                         </span>
                         <div>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-white">{ticket.name}</span>
-                            {ticket.userPurchaseCount > 1 && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold">
-                                Entry {ticket.ticketIndex} of {ticket.userPurchaseCount}
-                              </span>
-                            )}
+                            <span className="font-bold text-white">{investor.name}</span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold">
+                              {investor.investmentCount > 1 ? `${investor.investmentCount} Purchases (${investor.investmentCount} Draw Tickets)` : '1 Purchase'}
+                            </span>
                           </div>
                           <span className="text-[10px] font-mono text-slate-400 block">
-                            User ID: <strong className="text-amber-400">{ticket.userId}</strong> • {ticket.email}
+                            User ID: <strong className="text-amber-400">{investor.userId}</strong> • {investor.email}
                           </span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="font-semibold text-emerald-400">
-                          ₹{(ticket.ticketAmount || ticket.totalInvested || 0).toLocaleString('en-IN')}
+                        <span className="font-bold text-emerald-400">
+                          ₹{(investor.totalInvested || 0).toLocaleString('en-IN')}
                         </span>
                         <span className="text-[10px] text-slate-500 block">
-                          {(ticket.ticketLots || ticket.totalLots || 0).toLocaleString()} lots
+                          {(investor.totalLots || 0).toLocaleString()} {drawInvestment.unitName || 'lots'} aggregate
                         </span>
                       </div>
                     </div>
@@ -2339,7 +2389,7 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                 )}
               </div>
               <p className="text-[10px] text-slate-400 mt-1.5 italic">
-                * When an investor buys multiple times, their User ID is entered multiple times (1 ticket per confirmed investment lot/transaction).
+                * Repeat buyers appear only once with aggregated total amounts. Their winning chance is proportionally weighted by their purchases ({drawInvestors.reduce((acc, u) => acc + (u.investmentCount || 1), 0)} total tickets in pool).
               </p>
             </div>
 

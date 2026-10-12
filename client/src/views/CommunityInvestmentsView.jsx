@@ -61,12 +61,22 @@ export default function CommunityInvestmentsView({ investments, onInvest }) {
 
       {/* Grid of Commodity Assets */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">
-            Commodity Reserve Vaults ({commodityItems.length})
-          </h2>
-          <span className="text-xs text-slate-400">
-            Vault backing verified through monthly depository audits
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white">
+                Commodity Reserve Vaults ({commodityItems.length})
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                🎲 Includes 100% Target Lucky Draw Pool
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Upon reaching 100% target funding, an eligible confirmed investor is randomly awarded the full target pool payout.
+            </p>
+          </div>
+          <span className="text-xs text-slate-400 shrink-0">
+            Vault backing verified through depository audits
           </span>
         </div>
 

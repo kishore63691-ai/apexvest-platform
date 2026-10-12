@@ -263,63 +263,6 @@
         "payoutNotes": "",
         "payoutDisbursedAt": null
       }
-    },
-    {
-      "id": "BIZ-3714",
-      "raisedAmount": 0,
-      "investorCount": 0,
-      "status": "active",
-      "createdAt": "2026-10-09T13:16:53.714Z",
-      "title": "Target Test Pool Beta",
-      "type": "business",
-      "category": "Fintech Pool",
-      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-      "description": "Test lucky draw pool",
-      "targetAmount": 1000,
-      "rate": 500,
-      "minInvestment": 500,
-      "unitName": "Lot",
-      "tenure": "12 Months",
-      "expectedReturn": "12-16% Targeted",
-      "riskLevel": "Moderate",
-      "terms": "Standard investment terms apply."
-    },
-    {
-      "id": "BIZ-6828",
-      "raisedAmount": 1000,
-      "investorCount": 2,
-      "status": "fully_funded",
-      "createdAt": "2026-10-09T13:17:36.828Z",
-      "title": "Target Test Pool 856814",
-      "type": "business",
-      "category": "Fintech Pool",
-      "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-      "description": "Test lucky draw pool",
-      "targetAmount": 1000,
-      "rate": 500,
-      "minInvestment": 500,
-      "unitName": "Lot",
-      "tenure": "12 Months",
-      "expectedReturn": "12-16% Targeted",
-      "riskLevel": "Moderate",
-      "terms": "Standard investment terms apply.",
-      "winner": {
-        "userId": "USR-ADMIN-01",
-        "userName": "Platform Administrator",
-        "userEmail": "admin@investment.com",
-        "userMobile": "+91 98765 43210",
-        "totalLots": 2,
-        "totalInvested": 1000,
-        "amountWon": 1000,
-        "selectedAt": "2026-10-09T13:18:13.691Z",
-        "selectedBy": "USR-ADMIN-01",
-        "payoutStatus": "disbursed",
-        "payoutProofUrl": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800",
-        "payoutTxnId": "BANK-UTR-999888777",
-        "payoutNotes": "Transferred full target amount ₹1000 via IMPS.",
-        "payoutDisbursedAt": "2026-10-09T13:18:13.720Z",
-        "verifiedByAdmin": "USR-ADMIN-01"
-      }
     }
   ],
   "payments": [
@@ -711,7 +654,9 @@
       "purchaseDate": "2026-10-09T13:20:16.098Z",
       "currentRate": 500,
       "currentValue": 500,
-      "status": "confirmed"
+      "status": "confirmed",
+      "withdrawalStatus": "pending",
+      "withdrawalId": "WDR-347625"
     },
     {
       "id": "INV-14415",
@@ -907,6 +852,24 @@
     }
   ],
   "notifications": [
+    {
+      "id": "NOTIF-WDR-USER-1791804347651",
+      "userId": "USR-ADMIN-01",
+      "title": "Withdrawal Request Submitted",
+      "message": "Your withdrawal request of ₹500 for \"Target Test Pool\" has been received and is being processed by Admin.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-10-12T11:25:47.651Z"
+    },
+    {
+      "id": "NOTIF-WDR-ADMIN-1791804347626",
+      "userId": "admin",
+      "title": "New Withdrawal Request",
+      "message": "Platform Administrator requested withdrawal of ₹500 for \"Target Test Pool\".",
+      "type": "alert",
+      "isRead": false,
+      "createdAt": "2026-10-12T11:25:47.651Z"
+    },
     {
       "id": "NOTIF-WDR-APP-1791801030973",
       "userId": "USR-10025",
@@ -1346,9 +1309,44 @@
     "supportEmail": "compliance@growcapital.in",
     "supportPhone": "+91 80 4910 8800",
     "minLotSize": 10,
-    "disclaimerNotice": "Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding."
+    "disclaimerNotice": "Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding.",
+    "razorpayKeyId": "rzp_test_1DP5mmOlF5G5ag",
+    "razorpayKeySecret": "s8Yd3p4lFj3n9Z1x7q2k5m0b",
+    "razorpayEnabled": true
   },
   "withdrawals": [
+    {
+      "id": "WDR-347625",
+      "userId": "USR-ADMIN-01",
+      "userName": "Platform Administrator",
+      "userEmail": "admin@investment.com",
+      "userMobile": "+91 98765 43210",
+      "userInvestmentId": "INV-16098",
+      "investmentId": "BIZ-4504",
+      "investmentTitle": "Target Test Pool",
+      "investmentType": "business",
+      "tenure": "12 Months",
+      "amountInvested": 500,
+      "lots": 1,
+      "payoutAmount": 500,
+      "payoutMethod": "bank",
+      "bankDetails": {
+        "accountHolder": "Platform Administrator",
+        "accountNumber": ";;.afea'.'",
+        "ifsc": ";','D,S",
+        "bankName": ";.,.,f','",
+        "upiId": ""
+      },
+      "status": "pending",
+      "requestedAt": "2026-10-12T11:25:47.625Z",
+      "processedAt": null,
+      "processedBy": null,
+      "payoutTxnId": null,
+      "payoutProofUrl": null,
+      "adminNotes": "",
+      "rejectionReason": "",
+      "userNotes": ""
+    },
     {
       "id": "WDR-030917",
       "userId": "USR-10025",

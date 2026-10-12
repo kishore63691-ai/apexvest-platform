@@ -14,9 +14,8 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAuth }) {
 
   const navLinks = [
     { id: 'home', label: 'Home' },
-    { id: 'investments', label: 'Investments' },
-    { id: 'business', label: 'Business Funding' },
-    { id: 'community', label: 'Commodity Investments' },
+    { id: 'business', label: 'Business Funding (₹10/Lot)' },
+    { id: 'community', label: 'Commodity Reserves (Gold/Silver)' },
     ...(user ? [
       { id: 'portfolio', label: 'My Investments' },
       { id: 'transactions', label: 'Transactions' },

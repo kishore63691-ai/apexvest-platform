@@ -133,57 +133,112 @@ export default function HomeView({ investments, onInvest, onNavigate }) {
         </div>
       </section>
 
-      {/* Featured Business Opportunities */}
+      {/* Dedicated Portal Section - Business vs Commodity Separate Destinations */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              High Growth Enterprises
-            </span>
-            <h2 className="text-2xl font-black text-white mt-1">
-              Active Business Funding Opportunities
-            </h2>
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+            Dedicated Investment Channels
+          </span>
+          <h2 className="text-3xl font-black text-white mt-1">
+            Choose Your Preferred Asset Class
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 mt-2">
+            Business co-funding and commodity asset vaults are operated independently. Select a channel below to browse active opportunities.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Business Funding Channel Portal */}
+          <div className="p-8 rounded-3xl glass-panel-emerald border border-emerald-500/30 flex flex-col justify-between relative overflow-hidden group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30">
+                  <Building className="w-3.5 h-3.5" />
+                  <span>Business Co-Funding Portal</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                  {businessItems.length} Active Deals
+                </span>
+              </div>
+              <h3 className="text-2xl font-black text-white">
+                Manufacturing, Agritech & Energy Ventures
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Co-own productive operating facilities with a fixed entry of <strong>₹10 per lot</strong>. Earn quarterly commercial yield payouts. (No lucky draw pools).
+              </p>
+
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Unit Basis:</span>
+                  <span className="font-semibold text-white">₹10 = 1 Lot Allocation</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Payout Model:</span>
+                  <span className="font-semibold text-emerald-400">Quarterly Commercial Returns</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Draw Pool:</span>
+                  <span className="font-semibold text-slate-400">None (Pure Equity/Revenue Co-Funding)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-emerald-500/20">
+              <button
+                onClick={() => onNavigate('business')}
+                className="w-full py-3.5 btn-primary-emerald font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
+              >
+                <span>Enter Business Funding Portal ({businessItems.length} Products)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => onNavigate('business')}
-            className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1"
-          >
-            <span>View all businesses</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {businessItems.slice(0, 3).map((item) => (
-            <InvestmentCard key={item.id} investment={item} onInvest={onInvest} />
-          ))}
-        </div>
-      </section>
+          {/* Commodity Asset Reserves Channel Portal */}
+          <div className="p-8 rounded-3xl glass-panel-amber border border-amber-500/30 flex flex-col justify-between relative overflow-hidden group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 border border-amber-500/30">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>Commodity Asset Reserves Portal</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                  {commodityItems.length} Asset Vaults
+                </span>
+              </div>
+              <h3 className="text-2xl font-black text-white">
+                Physical Gold, Silver & Land Depository
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Fractional physical bullion and prime land backed by insured custody. Features <strong>Admin live spot rate repricing</strong> and <strong>100% Target Lucky Draw Pools</strong>!
+              </p>
 
-      {/* Featured Commodity Assets */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-              Securitized Hard Assets
-            </span>
-            <h2 className="text-2xl font-black text-white mt-1">
-              Commodity Asset Reserves (Gold, Silver, Land)
-            </h2>
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Spot Pricing:</span>
+                  <span className="font-semibold text-amber-300">Admin Managed Live Gram/Sq.Ft Rate</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Depository:</span>
+                  <span className="font-semibold text-white">Insured Vault Custody & Liquidity</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Draw Pool:</span>
+                  <span className="font-semibold text-amber-400">Exclusive 100% Target Lucky Draw</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-amber-500/20">
+              <button
+                onClick={() => onNavigate('community')}
+                className="w-full py-3.5 btn-primary-amber font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+              >
+                <span>Enter Commodity Reserves Portal ({commodityItems.length} Products)</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => onNavigate('community')}
-            className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1"
-          >
-            <span>View all assets</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {commodityItems.slice(0, 3).map((item) => (
-            <InvestmentCard key={item.id} investment={item} onInvest={onInvest} />
-          ))}
         </div>
       </section>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, CheckCircle, ArrowRight, ShieldCheck, QrCode, Copy,
-  Check, AlertTriangle, Clock, Upload, Sparkles, Building, Coins
+  Check, AlertTriangle, Clock, Upload, Sparkles, Building, Coins,
+  CreditCard, Smartphone, Zap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +15,10 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
   const [lots, setLots] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' | 'upi'
+
+  // Razorpay Config
+  const [razorpayConfig, setRazorpayConfig] = useState({ keyId: '', enabled: true });
 
   // Step 2 QR details
   const [qrDetails, setQrDetails] = useState(null);
@@ -24,12 +29,14 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [screenshotPreview, setScreenshotPreview] = useState(null);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [isInstantVerified, setIsInstantVerified] = useState(false);
 
   useEffect(() => {
     if (investment) {
       setStep(1);
       setError('');
       setSubmittedSuccess(false);
+      setIsInstantVerified(false);
       setTransactionId('');
       setScreenshotPreview(null);
       // Set reasonable default amount based on min investment
@@ -37,6 +44,20 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
       setAmount(String(defaultAmount));
     }
   }, [investment, isOpen]);
+
+  // Fetch Razorpay config on mount
+  useEffect(() => {
+    if (token) {
+      fetch('/api/payments/razorpay/config', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data) setRazorpayConfig(data);
+        })
+        .catch(() => {});
+    }
+  }, [token]);
 
   // Dynamic lot/unit recalculation
   useEffect(() => {
@@ -63,8 +84,116 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
 
   if (!isOpen || !investment) return null;
 
-  // Handle Step 1 Confirmation -> fetch QR details
-  const handleProceedToPayment = async () => {
+  // Razorpay Checkout Trigger
+  const handleRazorpayPay = async () => {
+    setError('');
+    const numAmount = Number(amount);
+
+    if (isNaN(numAmount) || numAmount < investment.minInvestment) {
+      setError(`Minimum investment is ₹${investment.minInvestment.toLocaleString('en-IN')}`);
+      return;
+    }
+
+    if (!user) {
+      openAuthModal('login');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. Create Order on backend
+      const res = await fetch('/api/payments/razorpay/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          investmentId: investment.id,
+          amount: numAmount
+        })
+      });
+      const orderData = await res.json();
+      if (!res.ok) throw new Error(orderData.message || 'Failed to initialize Razorpay order');
+
+      // 2. Open Razorpay Checkout modal
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay SDK failed to load. Please try standard UPI QR payment.');
+      }
+
+      const options = {
+        key: orderData.keyId || razorpayConfig.keyId || 'rzp_test_1DP5mmOlF5G5ag',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'ApexVest Capital',
+        description: `Investment in ${investment.title}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: user.name || '',
+          email: user.email || '',
+          contact: user.mobile || ''
+        },
+        theme: {
+          color: '#10b981'
+        },
+        handler: async function (response) {
+          // 3. Verify Payment on Backend
+          try {
+            setLoading(true);
+            const verifyRes = await fetch('/api/payments/razorpay/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                investmentId: investment.id,
+                amount: numAmount,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.message || 'Verification failed');
+
+            setTransactionId(response.razorpay_payment_id);
+            setIsInstantVerified(true);
+            setSubmittedSuccess(true);
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+            if (onSuccess) onSuccess();
+          } catch (vErr) {
+            setError(vErr.message || 'Verification error after payment capture.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        setError(resp.error?.description || 'Payment was declined or failed.');
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  // Handle Step 1 Confirmation -> UPI QR flow
+  const handleProceedToUpiPayment = async () => {
     setError('');
     const numAmount = Number(amount);
 
@@ -112,7 +241,7 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
     }
   };
 
-  // Step 3: Submit payment for verification
+  // Step 3: Submit manual payment for verification
   const handleSubmitPayment = async (e) => {
     e.preventDefault();
     setError('');
@@ -142,6 +271,7 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Payment submission failed');
 
+      setIsInstantVerified(false);
       setSubmittedSuccess(true);
       confetti({
         particleCount: 80,
@@ -230,10 +360,16 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
         {/* Success View */}
         {submittedSuccess ? (
           <div className="p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 mx-auto flex items-center justify-center animate-bounce">
-              <Clock className="w-8 h-8" />
+            <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
+              isInstantVerified
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 ring-8 ring-emerald-500/10'
+                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30 animate-bounce'
+            }`}>
+              {isInstantVerified ? <CheckCircle className="w-8 h-8" /> : <Clock className="w-8 h-8" />}
             </div>
-            <h4 className="text-xl font-bold text-white">Payment Verification Pending</h4>
+            <h4 className="text-xl font-bold text-white">
+              {isInstantVerified ? 'Payment Confirmed & Portfolio Active!' : 'Payment Verification Pending'}
+            </h4>
             <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-left space-y-2 text-xs">
               <div className="flex justify-between py-1 border-b border-slate-800">
                 <span className="text-slate-400">Investment:</span>
@@ -244,22 +380,37 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
                 <span className="font-semibold text-emerald-400">₹{Number(amount).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800">
-                <span className="text-slate-400">Transaction ID (UTR):</span>
+                <span className="text-slate-400">{isInstantVerified ? 'Razorpay Payment ID:' : 'Transaction ID (UTR):'}</span>
                 <span className="font-mono font-semibold text-amber-300">{transactionId}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-400">Status:</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold text-[11px]">
-                  Pending Admin Verification
+                <span className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${
+                  isInstantVerified
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-amber-500/20 text-amber-400'
+                }`}>
+                  {isInstantVerified ? '✅ Auto-Captured & Confirmed' : 'Pending Admin Verification'}
                 </span>
               </div>
             </div>
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 text-left flex items-start gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-              <span>
-                <strong>Important:</strong> As per platform rules, your investment will be officially confirmed and added to your active portfolio once Admin verifies the payment. The investment progress bar will update upon confirmation.
-              </span>
-            </div>
+
+            {isInstantVerified ? (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 text-left flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Instant Confirmation:</strong> Your Razorpay payment has been securely verified. Your {isBusiness ? 'lots' : 'asset units'} are now added to your portfolio and your ticket is registered for the jackpot draw!
+                </span>
+              </div>
+            ) : (
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300 text-left flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Important:</strong> As per platform rules, your investment will be officially confirmed and added to your active portfolio once Admin verifies the manual UPI payment.
+                </span>
+              </div>
+            )}
+
             <button
               onClick={onClose}
               className="w-full py-3.5 btn-primary-emerald text-slate-950 font-black text-sm flex items-center justify-center gap-2 cursor-pointer"
@@ -269,7 +420,7 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
           </div>
         ) : (
           <div className="p-6">
-            {/* STEP 1: Investment Details */}
+            {/* STEP 1: Investment Details & Payment Choice */}
             {step === 1 && (
               <div className="space-y-5">
                 <div className="grid grid-cols-2 gap-3 text-xs">
@@ -365,15 +516,77 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={loading || !amount || Number(amount) < investment.minInvestment}
-                  onClick={handleProceedToPayment}
-                  className="w-full py-3.5 btn-primary-emerald disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {loading ? 'Preparing Payment...' : 'Confirm Details & Proceed to Payment'}
-                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                </button>
+                {/* Payment Method Selector */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-2">
+                    Select Payment Gateway / Method
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('razorpay')}
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                        paymentMethod === 'razorpay'
+                          ? 'bg-emerald-500/10 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-500'
+                          : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+                          <Zap className="w-3.5 h-3.5" /> Razorpay
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold uppercase">
+                          Instant
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 font-medium">UPI, Cards, NetBanking</p>
+                      <span className="text-[10px] text-slate-500 mt-1 block">Instant auto-confirmation</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('upi')}
+                      className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                        paymentMethod === 'upi'
+                          ? 'bg-amber-500/10 border-amber-500 text-white shadow-lg shadow-amber-500/10 ring-1 ring-amber-500'
+                          : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-1">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                          <QrCode className="w-3.5 h-3.5" /> UPI QR Code
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold uppercase">
+                          Manual
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 font-medium">GPay, PhonePe, Paytm</p>
+                      <span className="text-[10px] text-slate-500 mt-1 block">Requires admin review</span>
+                    </button>
+                  </div>
+                </div>
+
+                {paymentMethod === 'razorpay' ? (
+                  <button
+                    type="button"
+                    disabled={loading || !amount || Number(amount) < investment.minInvestment}
+                    onClick={handleRazorpayPay}
+                    className="w-full py-3.5 btn-primary-emerald disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/25"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    {loading ? 'Launching Razorpay Gateway...' : `Pay ₹${Number(amount || 0).toLocaleString('en-IN')} with Razorpay`}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={loading || !amount || Number(amount) < investment.minInvestment}
+                    onClick={handleProceedToUpiPayment}
+                    className="w-full py-3.5 btn-primary-emerald disabled:opacity-50 text-slate-950 font-black text-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {loading ? 'Preparing Payment QR...' : 'Proceed to UPI QR Code'}
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                )}
               </div>
             )}
 
