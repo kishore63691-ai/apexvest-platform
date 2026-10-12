@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white min-h-screen relative;
+    background-color: #030712;
+    /* Ultra-HD high-frequency financial trading charts, glowing candlesticks and luxury cyber wealth background */
+    background-image: 
+      linear-gradient(to bottom, rgba(2, 6, 23, 0.72) 0%, rgba(3, 7, 18, 0.82) 50%, rgba(2, 6, 23, 0.90) 100%),
+      radial-gradient(circle at 10% 12%, rgba(16, 185, 129, 0.22) 0%, transparent 50%),
+      radial-gradient(circle at 90% 18%, rgba(245, 158, 11, 0.20) 0%, transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.14) 0%, transparent 65%),
+      radial-gradient(circle at 50% 90%, rgba(14, 165, 233, 0.16) 0%, transparent 60%),
+      url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2880&q=90');
+    background-size: cover, 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+}
+
+/* ================= MODERN PREMIUM UI DESIGN SYSTEM ================= */
+
+/* Glassmorphism containers with subtle glow borders and luxury depth */
+.glass-panel {
+  background: rgba(9, 14, 28, 0.78);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
+.glass-panel-emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 13, 26, 0.85) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  box-shadow: 0 20px 45px -12px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(16, 185, 129, 0.28);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-emerald:hover {
+  border-color: rgba(16, 185, 129, 0.50);
+  box-shadow: 0 25px 50px -10px rgba(16, 185, 129, 0.32), inset 0 1px 0 rgba(16, 185, 129, 0.38);
+}
+
+.glass-panel-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(6, 13, 26, 0.85) 100%);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  box-shadow: 0 20px 45px -12px rgba(245, 158, 11, 0.22), inset 0 1px 0 rgba(245, 158, 11, 0.28);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel-amber:hover {
+  border-color: rgba(245, 158, 11, 0.50);
+  box-shadow: 0 25px 50px -10px rgba(245, 158, 11, 0.32), inset 0 1px 0 rgba(245, 158, 11, 0.38);
+}
+
+/* Shimmer animation on buttons and badges */
+@keyframes subtle-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.shimmer-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-badge::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+  animation: subtle-shimmer 3.5s infinite;
+}
+
+/* ================= MODERN BUTTON STYLES ================= */
+
+/* Primary Emerald Glow Button */
+.btn-primary-emerald {
+  position: relative;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #022c22;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.btn-primary-emerald:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-primary-emerald:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Luxury 24K Pure Gold Glow Button */
+.btn-primary-amber {
+  position: relative;
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 55%, #b45309 100%);
+  color: #271202;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 22px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary-amber:hover {
+  background: linear-gradient(135deg, #fde68a 0%, #f59e0b 55%, #d97706 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(245, 158, 11, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.btn-primary-amber:active {
+  transform: translateY(0);
+}
+
+/* Secondary Glass Button */
+.btn-secondary-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  font-weight: 600;
+  border-radius: 0.85rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+/* Subtle financial chart watermark overlay across pages */
+.financial-watermark-bg {
+  position: relative;
+}
+.financial-watermark-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' opacity='0.035'%3E%3Cpath fill='%2310b981' fill-opacity='1' d='M0,192L48,197.3C96,203,192,213,288,186.7C384,160,480,96,576,96C672,96,768,160,864,181.3C960,203,1056,181,1152,149.3C1248,117,1344,75,1392,53.3L1440,32L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: cover;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Golden Winner Jackpot Banner Animation */
+@keyframes winner-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-winner-shimmer {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.35) 50%, rgba(245, 158, 11, 0.15) 100%);
+  background-size: 200% 100%;
+  animation: winner-shimmer 3.5s infinite linear;
+}
+
+/* Subtle Card Glow Hover Effect */
+.card-hover-glow {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-glow:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 35px -10px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.3);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #080d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

@@ -1,0 +1,37 @@
+{
+  "name": "apexvest-investment-platform",
+  "version": "1.0.0",
+  "description": "Modern secure full-stack investment platform with business funding, community assets, and payment verification",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"node server/server.js\" \"npm run client\"",
+    "server": "node server/server.js",
+    "client": "npm run dev --prefix client",
+    "build": "npm run build --prefix client",
+    "build:render": "npm install && cd client && npm install && npm run build && cd ..",
+    "test:flow": "node server/test-flow.js"
+  },
+  "keywords": [
+    "investment",
+    "fintech",
+    "crowdfunding",
+    "gold",
+    "silver",
+    "real-estate"
+  ],
+  "author": "ApexVest",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
