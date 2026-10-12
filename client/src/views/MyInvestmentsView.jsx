@@ -128,20 +128,23 @@ export default function MyInvestmentsView({ onNavigate }) {
     }
   };
 
-  const filtered = investments.filter(inv => {
-    if (filterType !== 'all') {
-      if (filterType === 'commodity') {
-        if (inv.investmentType !== 'commodity' && inv.investmentType !== 'community') return false;
-      } else if (inv.investmentType !== filterType) {
-        return false;
-      }
+  // Active holdings (exclude Disbursed & Paid)
+  const activeInvestments = investments.filter(inv => inv.withdrawalStatus !== 'approved');
+  const disbursedInvestments = investments.filter(inv => inv.withdrawalStatus === 'approved');
+
+  const filtered = (filterType === 'disbursed' ? disbursedInvestments : activeInvestments).filter(inv => {
+    if (filterType === 'all' || filterType === 'disbursed') return true;
+    if (filterType === 'commodity') {
+      return inv.investmentType === 'commodity' || inv.investmentType === 'community';
     }
-    return true;
+    return inv.investmentType === filterType;
   });
 
-  const totalInvested = filtered.reduce((acc, i) => acc + Number(i.amount), 0);
-  const totalValue = filtered.reduce((acc, i) => acc + Number(i.currentValue), 0);
+  const totalInvested = activeInvestments.reduce((acc, i) => acc + Number(i.amount), 0);
+  const totalValue = activeInvestments.reduce((acc, i) => acc + Number(i.currentValue), 0);
   const totalGains = Math.max(0, totalValue - totalInvested);
+
+  const totalDisbursedPayout = disbursedInvestments.reduce((acc, i) => acc + Number(i.payoutAmount || i.currentValue || i.amount), 0);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -155,7 +158,7 @@ export default function MyInvestmentsView({ onNavigate }) {
             My Confirmed Investments
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Detailed ledger of verified holdings, allocated units, and real-time market value.
+            Active verified holdings, allocated units, and live market valuations.
           </p>
         </div>
 
@@ -168,7 +171,7 @@ export default function MyInvestmentsView({ onNavigate }) {
             <span>Refresh</span>
           </button>
           <button
-            onClick={() => onNavigate('investments')}
+            onClick={() => onNavigate('business')}
             className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20"
           >
             + New Investment
@@ -177,36 +180,46 @@ export default function MyInvestmentsView({ onNavigate }) {
       </div>
 
       {/* Portfolio Totals Summary Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800">
         <div>
-          <span className="text-xs text-slate-400">Total Confirmed Capital</span>
+          <span className="text-xs text-slate-400">Active Invested Capital</span>
           <p className="text-2xl font-black text-white mt-1">
             ₹{totalInvested.toLocaleString('en-IN')}
           </p>
+          <span className="text-[10px] text-slate-500">{activeInvestments.length} Active Holdings</span>
         </div>
         <div className="md:border-l border-slate-800 md:pl-6">
           <span className="text-xs text-slate-400">Current Portfolio Value</span>
           <p className="text-2xl font-black text-blue-400 mt-1">
             ₹{totalValue.toLocaleString('en-IN')}
           </p>
+          <span className="text-[10px] text-slate-500">Live Valuation</span>
         </div>
         <div className="md:border-l border-slate-800 md:pl-6">
-          <span className="text-xs text-slate-400">Accrued Return / Appreciation</span>
+          <span className="text-xs text-slate-400">Accrued Appreciation</span>
           <p className="text-2xl font-black text-emerald-400 mt-1">
             +₹{totalGains.toLocaleString('en-IN')}
           </p>
+          <span className="text-[10px] text-emerald-400/80">Unrealized Gains</span>
+        </div>
+        <div className="md:border-l border-slate-800 md:pl-6">
+          <span className="text-xs text-slate-400">Total Disbursed & Paid</span>
+          <p className="text-2xl font-black text-amber-400 mt-1">
+            ₹{totalDisbursedPayout.toLocaleString('en-IN')}
+          </p>
+          <span className="text-[10px] text-amber-400/80">{disbursedInvestments.length} Completed Payouts</span>
         </div>
       </div>
 
-      {/* Type Switcher */}
-      <div className="flex gap-2">
+      {/* Type & Status Switcher */}
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilterType('all')}
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
             filterType === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
           }`}
         >
-          All Assets ({investments.length})
+          Active Assets ({activeInvestments.length})
         </button>
         <button
           onClick={() => setFilterType('business')}
@@ -215,7 +228,7 @@ export default function MyInvestmentsView({ onNavigate }) {
           }`}
         >
           <Building className="w-3.5 h-3.5" />
-          Business Lots
+          Business Lots ({activeInvestments.filter(i => i.investmentType === 'business').length})
         </button>
         <button
           onClick={() => setFilterType('commodity')}
@@ -224,7 +237,16 @@ export default function MyInvestmentsView({ onNavigate }) {
           }`}
         >
           <Coins className="w-3.5 h-3.5" />
-          Commodity Asset Reserves
+          Commodity Asset Reserves ({activeInvestments.filter(i => i.investmentType === 'commodity' || i.investmentType === 'community').length})
+        </button>
+        <button
+          onClick={() => setFilterType('disbursed')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
+            filterType === 'disbursed' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-slate-400 hover:text-amber-300'
+          }`}
+        >
+          <FileCheck className="w-3.5 h-3.5" />
+          Disbursed & Paid Receipts ({disbursedInvestments.length})
         </button>
       </div>
 

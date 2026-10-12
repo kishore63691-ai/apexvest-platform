@@ -7,10 +7,12 @@ const { authenticate } = require('../middleware/auth');
 router.get('/stats', authenticate, (req, res) => {
   try {
     const userId = req.user.id;
-    const userInvestments = db.getUserInvestments(userId);
+    const allUserInvestments = db.getUserInvestments(userId);
+    const userInvestments = allUserInvestments.filter(ui => ui.withdrawalStatus !== 'approved');
+    const disbursedInvestments = allUserInvestments.filter(ui => ui.withdrawalStatus === 'approved');
     const userPayments = db.getPayments().filter(p => p.userId === userId);
 
-    // Confirmed investments
+    // Confirmed active investments
     const totalInvested = userInvestments.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
     const confirmedCount = userInvestments.length;
 
@@ -28,6 +30,9 @@ router.get('/stats', authenticate, (req, res) => {
       }
     });
 
+    // Disbursed capital
+    const totalDisbursed = disbursedInvestments.reduce((sum, inv) => sum + Number(inv.payoutAmount || inv.currentValue || inv.amount), 0);
+
     // Pending investments
     const pendingPayments = userPayments.filter(p => p.status === 'pending');
     const pendingAmount = pendingPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
@@ -38,6 +43,7 @@ router.get('/stats', authenticate, (req, res) => {
 
     res.json({
       totalInvested,
+      totalDisbursed,
       confirmedCount,
       pendingAmount,
       pendingCount,
