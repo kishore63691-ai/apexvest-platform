@@ -4,7 +4,8 @@ import {
   Building, Coins, Plus, Edit2, Trash2, Power, RefreshCw,
   AlertTriangle, Check, X, Eye, Settings, FileText, ArrowRight,
   Package, Tag, Search, Filter, Image as ImageIcon, Sparkles,
-  Trophy, Upload, FileCheck, ExternalLink, Gift, Shuffle
+  Trophy, Upload, FileCheck, ExternalLink, Gift, Shuffle,
+  ArrowDownCircle, Landmark, Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,7 +22,7 @@ const IMAGE_PRESETS = [
 
 export default function AdminDashboardView({ onInvestmentUpdated }) {
   const { token } = useAuth();
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'draws' | 'payments' | 'businesses' | 'assets' | 'users' | 'settings'
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'draws' | 'withdrawals' | 'payments' | 'businesses' | 'assets' | 'users' | 'settings'
   const [stats, setStats] = useState(null);
   const [payments, setPayments] = useState([]);
   const [investments, setInvestments] = useState([]);
@@ -29,6 +30,22 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
   const [settings, setSettings] = useState({ upiId: '', payeeName: '' });
   const [loading, setLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState({ text: '', type: '' });
+
+  // Withdrawals State
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [wdrFilter, setWdrFilter] = useState('all');
+  const [wdrSearch, setWdrSearch] = useState('');
+  const [wdrApproveModalOpen, setWdrApproveModalOpen] = useState(false);
+  const [selectedWdr, setSelectedWdr] = useState(null);
+  const [wdrProofFile, setWdrProofFile] = useState(null);
+  const [wdrProofPreview, setWdrProofPreview] = useState('');
+  const [wdrProofTxnId, setWdrProofTxnId] = useState('');
+  const [wdrProofNotes, setWdrProofNotes] = useState('');
+  const [wdrApproving, setWdrApproving] = useState(false);
+  const [wdrRejectModalOpen, setWdrRejectModalOpen] = useState(false);
+  const [wdrRejectReason, setWdrRejectReason] = useState('Bank account details mismatch');
+  const [viewProofModalOpen, setViewProofModalOpen] = useState(false);
+  const [viewProofData, setViewProofData] = useState(null);
 
   // Catalog search & filter
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -127,6 +144,15 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
       if (setRes.ok) {
         const sData = await setRes.json();
         setSettings(sData.settings || {});
+      }
+
+      // 6. Withdrawals
+      const wdrRes = await fetch('/api/admin/withdrawals', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (wdrRes.ok) {
+        const wData = await wdrRes.json();
+        setWithdrawals(wData.withdrawals || []);
       }
     } catch (err) {
       console.error(err);
@@ -574,7 +600,108 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
     }
   };
 
+  // --- Withdrawal Handlers ---
+  const handleOpenApproveWdrModal = (wdr) => {
+    setSelectedWdr(wdr);
+    setWdrProofTxnId(`UTR-WDR-${Date.now().toString().slice(-6)}`);
+    setWdrProofNotes(`Withdrawal of ₹${Number(wdr.payoutAmount).toLocaleString('en-IN')} disbursed via ${wdr.payoutMethod.toUpperCase()}`);
+    setWdrProofPreview('');
+    setWdrProofFile(null);
+    setWdrApproveModalOpen(true);
+  };
+
+  const handleWdrProofFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setWdrProofFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setWdrProofPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleConfirmApproveWdr = async (e) => {
+    e.preventDefault();
+    if (!selectedWdr) return;
+    setWdrApproving(true);
+
+    try {
+      let finalProofUrl = wdrProofPreview;
+      if (wdrProofFile) {
+        const formData = new FormData();
+        formData.append('file', wdrProofFile);
+        const upRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (upRes.ok) {
+          const upData = await upRes.json();
+          finalProofUrl = upData.url;
+        }
+      }
+
+      const res = await fetch(`/api/admin/withdrawals/${selectedWdr.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          payoutTxnId: wdrProofTxnId,
+          payoutProofUrl: finalProofUrl,
+          adminNotes: wdrProofNotes
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      showToast(`Withdrawal ${selectedWdr.id} approved and disbursed! Payout proof uploaded.`);
+      setWdrApproveModalOpen(false);
+      setSelectedWdr(null);
+      fetchData();
+      if (onInvestmentUpdated) onInvestmentUpdated();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setWdrApproving(false);
+    }
+  };
+
+  const handleOpenRejectWdrModal = (wdr) => {
+    setSelectedWdr(wdr);
+    setWdrRejectReason('Bank account or UPI ID verification failed');
+    setWdrRejectModalOpen(true);
+  };
+
+  const handleConfirmRejectWdr = async () => {
+    if (!selectedWdr) return;
+    try {
+      const res = await fetch(`/api/admin/withdrawals/${selectedWdr.id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason: wdrRejectReason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      showToast(`Withdrawal ${selectedWdr.id} rejected.`);
+      setWdrRejectModalOpen(false);
+      setSelectedWdr(null);
+      fetchData();
+      if (onInvestmentUpdated) onInvestmentUpdated();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   const pendingPayments = payments.filter(p => p.status === 'pending');
+  const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending');
   const fullyFundedCampaigns = investments.filter(
     i => i.status === 'fully_funded' || (i.raisedAmount && i.raisedAmount >= i.targetAmount)
   );
@@ -707,6 +834,17 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
             <p className="text-2xl font-black text-white mt-1">{stats.totalUsers}</p>
             <span className="text-[10px] text-slate-400 font-mono mt-1 block">{stats.totalInvestors} Active Investors</span>
           </div>
+
+          <div className="p-5 rounded-2xl glass-panel-amber card-hover-glow border-amber-500/40">
+            <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+              <ArrowDownCircle className="w-3.5 h-3.5 text-amber-400" />
+              Withdrawal Requests
+            </span>
+            <p className="text-2xl font-black text-amber-400 mt-1">{pendingWithdrawals.length}</p>
+            <span className="text-[10px] text-amber-300/80 font-mono mt-1 block">
+              {withdrawals.filter(w => w.status === 'approved').length} Disbursed & Paid
+            </span>
+          </div>
         </div>
       )}
 
@@ -734,6 +872,23 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
         >
           <Trophy className="w-4 h-4" />
           <span>🏆 Target Reached & Lucky Draws ({fullyFundedCampaigns.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('withdrawals')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'withdrawals'
+              ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+              : 'bg-slate-900 text-amber-300 hover:text-white border border-amber-500/30'
+          }`}
+        >
+          <ArrowDownCircle className="w-4 h-4" />
+          <span>Withdrawal Requests</span>
+          {pendingWithdrawals.length > 0 && (
+            <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] flex items-center justify-center font-bold animate-pulse">
+              {pendingWithdrawals.length}
+            </span>
+          )}
         </button>
 
         <button
@@ -1135,6 +1290,234 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= TAB: WITHDRAWAL REQUESTS ================= */}
+      {activeTab === 'withdrawals' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-wider mb-0.5">
+                <ArrowDownCircle className="w-4 h-4" />
+                <span>Investor Liquidity & Tenure Redemptions</span>
+              </div>
+              <h2 className="text-lg font-bold text-white">Withdrawal Requests Center</h2>
+              <p className="text-xs text-slate-400">
+                Review investor capital and return withdrawal requests after tenure completion or flexible redemption. Approve with bank transfer UTR and receipt proof, or reject with reason.
+              </p>
+            </div>
+            <span className="text-xs font-mono text-amber-400 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20 w-fit">
+              {pendingWithdrawals.length} Pending Approval
+            </span>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 bg-slate-900/90 border border-slate-800 rounded-2xl">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button
+                  onClick={() => setWdrFilter('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    wdrFilter === 'all' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All ({withdrawals.length})
+                </button>
+                <button
+                  onClick={() => setWdrFilter('pending')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+                    wdrFilter === 'pending' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-amber-400 hover:text-white'
+                  }`}
+                >
+                  <span>Pending</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-950/40">{pendingWithdrawals.length}</span>
+                </button>
+                <button
+                  onClick={() => setWdrFilter('approved')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    wdrFilter === 'approved' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Approved ({withdrawals.filter(w => w.status === 'approved').length})
+                </button>
+                <button
+                  onClick={() => setWdrFilter('rejected')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                    wdrFilter === 'rejected' ? 'bg-rose-500 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Rejected ({withdrawals.filter(w => w.status === 'rejected').length})
+                </button>
+              </div>
+            </div>
+
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={wdrSearch}
+                onChange={(e) => setWdrSearch(e.target.value)}
+                placeholder="Search by name, email, ID, or opportunity..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          {/* Requests Table */}
+          {withdrawals.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-slate-900 border border-slate-800 text-slate-400">
+              <ArrowDownCircle className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-semibold text-white">No Withdrawal Requests Found</p>
+              <p className="text-xs text-slate-500 mt-1">When investors submit withdrawal requests from their portfolio, they will appear here for admin review.</p>
+            </div>
+          ) : (
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl backdrop-blur-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/60">
+                      <th className="py-3 px-4">Request ID & Date</th>
+                      <th className="py-3 px-4">Investor</th>
+                      <th className="py-3 px-4">Opportunity & Tenure</th>
+                      <th className="py-3 px-4">Principal vs Payout</th>
+                      <th className="py-3 px-4">Payout Destination</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {withdrawals
+                      .filter(w => {
+                        if (wdrFilter !== 'all' && w.status !== wdrFilter) return false;
+                        if (wdrSearch.trim()) {
+                          const q = wdrSearch.toLowerCase();
+                          return (
+                            w.id.toLowerCase().includes(q) ||
+                            w.userName.toLowerCase().includes(q) ||
+                            w.userEmail.toLowerCase().includes(q) ||
+                            w.investmentTitle.toLowerCase().includes(q) ||
+                            w.userId.toLowerCase().includes(q)
+                          );
+                        }
+                        return true;
+                      })
+                      .map((wdr) => (
+                        <tr key={wdr.id} className="hover:bg-slate-800/40 transition">
+                          <td className="py-3.5 px-4">
+                            <span className="font-mono font-bold text-amber-300 block">{wdr.id}</span>
+                            <span className="text-[10px] text-slate-500">
+                              {new Date(wdr.requestedAt).toLocaleDateString()} {new Date(wdr.requestedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-white block">{wdr.userName}</span>
+                            <span className="text-[10px] font-mono text-slate-400 block">{wdr.userId} • {wdr.userEmail}</span>
+                            {wdr.userMobile && <span className="text-[10px] text-slate-500 block">{wdr.userMobile}</span>}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-semibold text-white block">{wdr.investmentTitle}</span>
+                            <span className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                              <span className="capitalize">{wdr.investmentType}</span> • ⏱ {wdr.tenure || 'Flexible'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="text-slate-400 text-[11px] block">Capital: ₹{Number(wdr.amountInvested).toLocaleString('en-IN')}</span>
+                            <span className="text-sm font-black text-amber-300 block">
+                              Payout: ₹{Number(wdr.payoutAmount).toLocaleString('en-IN')}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {wdr.payoutMethod === 'upi' ? (
+                              <div className="flex items-start gap-1.5">
+                                <Smartphone className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[10px] font-bold text-amber-400 uppercase">UPI VPA</span>
+                                  <p className="font-mono text-white font-semibold text-[11px]">{wdr.bankDetails?.upiId}</p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-1.5">
+                                <Landmark className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                                <div>
+                                  <span className="text-[10px] font-bold text-blue-400">{wdr.bankDetails?.bankName || 'Bank Transfer'}</span>
+                                  <p className="font-mono text-white text-[11px]">A/C: {wdr.bankDetails?.accountNumber}</p>
+                                  <p className="font-mono text-slate-400 text-[10px]">IFSC: {wdr.bankDetails?.ifsc} ({wdr.bankDetails?.accountHolder})</p>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            {wdr.status === 'approved' ? (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] flex items-center gap-1 w-fit">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Disbursed & Paid
+                              </span>
+                            ) : wdr.status === 'pending' ? (
+                              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] flex items-center gap-1 w-fit animate-pulse">
+                                <Clock className="w-3.5 h-3.5" />
+                                Pending Review
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400 font-bold text-[10px] flex items-center gap-1 w-fit">
+                                <XCircle className="w-3.5 h-3.5" />
+                                Rejected
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            {wdr.status === 'pending' ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => handleOpenApproveWdrModal(wdr)}
+                                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-md shadow-amber-500/20 flex items-center gap-1"
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  <span>Approve & Payout</span>
+                                </button>
+                                <button
+                                  onClick={() => handleOpenRejectWdrModal(wdr)}
+                                  className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 text-xs font-semibold border border-slate-700"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : wdr.status === 'approved' ? (
+                              <div className="space-y-1">
+                                <span className="font-mono text-[10px] text-amber-400 block font-bold">{wdr.payoutTxnId}</span>
+                                {wdr.payoutProofUrl ? (
+                                  <button
+                                    onClick={() => {
+                                      setViewProofData({
+                                        title: `Withdrawal Payout Receipt - ${wdr.id}`,
+                                        url: wdr.payoutProofUrl,
+                                        txnId: wdr.payoutTxnId,
+                                        notes: wdr.adminNotes,
+                                        amount: wdr.payoutAmount,
+                                        user: wdr.userName
+                                      });
+                                      setViewProofModalOpen(true);
+                                    }}
+                                    className="text-[11px] text-emerald-400 hover:underline font-semibold flex items-center justify-center gap-1 mx-auto"
+                                  >
+                                    <FileCheck className="w-3 h-3" />
+                                    <span>View Receipt</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-slate-500 italic">Disbursed</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-rose-400 italic">Reason: {wdr.rejectionReason}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -1912,29 +2295,52 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
               <div className="flex items-center justify-between mb-2 text-xs">
                 <span className="font-bold text-white flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-emerald-400" />
-                  Eligible Confirmed Investors ({drawInvestors.length})
+                  Eligible Draw Entries & Tickets ({drawInvestors.length})
                 </span>
-                <span className="text-[11px] text-slate-400">Equal winning probability</span>
+                <span className="text-[11px] text-amber-400 font-semibold">
+                  Multi-purchase tickets included
+                </span>
               </div>
 
-              <div className="max-h-44 overflow-y-auto space-y-1.5 bg-slate-950 p-2.5 rounded-xl border border-slate-800 divide-y divide-slate-800/40">
+              <div className="max-h-52 overflow-y-auto space-y-1.5 bg-slate-950 p-2.5 rounded-xl border border-slate-800 divide-y divide-slate-800/40">
                 {drawInvestors.length === 0 ? (
                   <p className="p-4 text-center text-slate-500 text-xs">Loading confirmed participants...</p>
                 ) : (
-                  drawInvestors.map((inv) => (
-                    <div key={inv.userId} className="pt-1.5 first:pt-0 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-white block">{inv.name}</span>
-                        <span className="text-[10px] font-mono text-slate-400">{inv.userId} • {inv.email}</span>
+                  drawInvestors.map((ticket, idx) => (
+                    <div key={ticket.userInvestmentId || idx} className="pt-2 first:pt-0 flex items-center justify-between text-xs">
+                      <div className="flex items-start gap-2">
+                        <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] font-bold shrink-0 mt-0.5">
+                          #{ticket.ticketIndex || idx + 1}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-white">{ticket.name}</span>
+                            {ticket.userPurchaseCount > 1 && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-semibold">
+                                Entry {ticket.ticketIndex} of {ticket.userPurchaseCount}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-400 block">
+                            User ID: <strong className="text-amber-400">{ticket.userId}</strong> • {ticket.email}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="font-semibold text-emerald-400">₹{inv.totalInvested.toLocaleString('en-IN')}</span>
-                        <span className="text-[10px] text-slate-500 block">{inv.totalLots} lots</span>
+                      <div className="text-right shrink-0">
+                        <span className="font-semibold text-emerald-400">
+                          ₹{(ticket.ticketAmount || ticket.totalInvested || 0).toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block">
+                          {(ticket.ticketLots || ticket.totalLots || 0).toLocaleString()} lots
+                        </span>
                       </div>
                     </div>
                   ))
                 )}
               </div>
+              <p className="text-[10px] text-slate-400 mt-1.5 italic">
+                * When an investor buys multiple times, their User ID is entered multiple times (1 ticket per confirmed investment lot/transaction).
+              </p>
             </div>
 
             <div className="flex gap-2 pt-2">
@@ -2254,6 +2660,259 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 7: APPROVE WITHDRAWAL & UPLOAD PAYOUT PROOF ================= */}
+      {wdrApproveModalOpen && selectedWdr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-lg bg-slate-900 border border-amber-500/50 rounded-3xl shadow-2xl p-6 sm:p-7 space-y-5 my-8">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <ArrowDownCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Approve Withdrawal & Upload Proof</h3>
+                  <p className="text-xs text-slate-400">Request ID: {selectedWdr.id}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setWdrApproveModalOpen(false);
+                  setSelectedWdr(null);
+                }}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Payout Summary Box */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-400">Investor:</span>
+                <span className="font-bold text-white">{selectedWdr.userName} ({selectedWdr.userId})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Opportunity:</span>
+                <span className="font-semibold text-white">{selectedWdr.investmentTitle}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Original Investment:</span>
+                <span className="font-mono text-slate-300">₹{Number(selectedWdr.amountInvested).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between pt-1 border-t border-slate-800">
+                <span className="text-amber-300 font-bold">Total Payout to Transfer:</span>
+                <span className="text-base font-black text-amber-300">₹{Number(selectedWdr.payoutAmount).toLocaleString('en-IN')}</span>
+              </div>
+
+              {/* Destination Account */}
+              <div className="pt-2 border-t border-slate-800 text-[11px] bg-slate-900/60 p-2.5 rounded-xl">
+                <span className="text-slate-400 font-semibold block mb-1">Payout Destination:</span>
+                {selectedWdr.payoutMethod === 'upi' ? (
+                  <p className="font-mono text-amber-300 font-bold">UPI ID: {selectedWdr.bankDetails?.upiId}</p>
+                ) : (
+                  <div>
+                    <p className="font-semibold text-white">{selectedWdr.bankDetails?.bankName || 'Bank Account'}</p>
+                    <p className="font-mono text-slate-300">A/C: {selectedWdr.bankDetails?.accountNumber}</p>
+                    <p className="font-mono text-slate-400">IFSC: {selectedWdr.bankDetails?.ifsc} • Name: {selectedWdr.bankDetails?.accountHolder}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmApproveWdr} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Bank Transfer Reference / UTR Number <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={wdrProofTxnId}
+                  onChange={(e) => setWdrProofTxnId(e.target.value)}
+                  placeholder="e.g. UTR928172635481"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Bank Transfer Receipt Screenshot Image (Recommended)
+                </label>
+                <div className="border-2 border-dashed border-slate-700 hover:border-amber-500/50 rounded-2xl p-4 text-center bg-slate-950/60 relative cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleWdrProofFileChange}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  {wdrProofPreview ? (
+                    <div className="space-y-2">
+                      <img
+                        src={wdrProofPreview}
+                        alt="Proof preview"
+                        className="max-h-44 mx-auto rounded-xl border border-slate-800 object-contain"
+                      />
+                      <p className="text-emerald-400 font-semibold text-[11px] flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Screenshot attached. Click to change.</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="py-4 space-y-1.5 text-slate-400">
+                      <Upload className="w-8 h-8 mx-auto text-amber-400" />
+                      <p className="font-semibold text-white">Click or drag & drop transfer receipt</p>
+                      <p className="text-[10px] text-slate-500">Supports PNG, JPG, JPEG (Max 10MB)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">
+                  Payout Remarks
+                </label>
+                <textarea
+                  rows={2}
+                  value={wdrProofNotes}
+                  onChange={(e) => setWdrProofNotes(e.target.value)}
+                  placeholder="e.g. Funds transferred from ICICI corporate account."
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-xs focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 leading-relaxed">
+                📢 Approving will mark this withdrawal request as <strong>Paid & Disbursed</strong> and display the official payout receipt and UTR reference directly in the investor's portfolio.
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWdrApproveModalOpen(false);
+                    setSelectedWdr(null);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={wdrApproving}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1"
+                >
+                  {wdrApproving ? 'Processing...' : 'Confirm & Disburse Payout'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 8: REJECT WITHDRAWAL REQUEST ================= */}
+      {wdrRejectModalOpen && selectedWdr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-rose-400">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="font-bold text-sm text-white">Reject Withdrawal Request</h3>
+              </div>
+              <button onClick={() => {
+                setWdrRejectModalOpen(false);
+                setSelectedWdr(null);
+              }}>
+                <X className="w-5 h-5 text-slate-400 hover:text-white" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300">
+              Rejecting withdrawal request of <strong>₹{Number(selectedWdr.payoutAmount).toLocaleString('en-IN')}</strong> from <strong>{selectedWdr.userName}</strong> for <strong>{selectedWdr.investmentTitle}</strong>.
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Reason for Rejection (Investor will see this):
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={wdrRejectReason}
+                onChange={(e) => setWdrRejectReason(e.target.value)}
+                placeholder="e.g. Bank account IFSC mismatch, invalid UPI handle, or tenure not yet completed..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setWdrRejectModalOpen(false);
+                  setSelectedWdr(null);
+                }}
+                className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRejectWdr}
+                className="flex-1 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-slate-950 text-xs font-bold"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL 9: VIEW PROOF RECEIPT ================= */}
+      {viewProofModalOpen && viewProofData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <FileCheck className="w-5 h-5" />
+                <h3 className="font-bold text-sm text-white">{viewProofData.title}</h3>
+              </div>
+              <button onClick={() => {
+                setViewProofModalOpen(false);
+                setViewProofData(null);
+              }}>
+                <X className="w-5 h-5 text-slate-400 hover:text-white" />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-300 space-y-1 bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <p>Investor: <strong className="text-white">{viewProofData.user}</strong></p>
+              <p>Amount: <strong className="text-emerald-400">₹{Number(viewProofData.amount).toLocaleString('en-IN')}</strong></p>
+              <p>UTR Reference: <strong className="text-amber-300 font-mono">{viewProofData.txnId}</strong></p>
+              {viewProofData.notes && <p className="italic text-slate-400">Notes: "{viewProofData.notes}"</p>}
+            </div>
+
+            {viewProofData.url && (
+              <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 p-2">
+                <img
+                  src={viewProofData.url}
+                  alt="Receipt Proof"
+                  className="w-full max-h-72 object-contain mx-auto"
+                />
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setViewProofModalOpen(false);
+                setViewProofData(null);
+              }}
+              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

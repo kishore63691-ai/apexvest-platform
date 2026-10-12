@@ -657,7 +657,13 @@
       "currentValue": 15000.02,
       "adminProofUrl": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800",
       "adminNotes": "Approved by admin, verified with bank statement",
-      "status": "confirmed"
+      "status": "confirmed",
+      "withdrawalStatus": "approved",
+      "withdrawalId": "WDR-030917",
+      "withdrawnAt": "2026-10-12T10:30:30.972Z",
+      "payoutTxnId": "UTR-BANK-9988771122",
+      "payoutProofUrl": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80",
+      "payoutAmount": 15000.02
     },
     {
       "id": "INV-01984",
@@ -882,9 +888,52 @@
       "currentRate": 10,
       "currentValue": 2568,
       "status": "confirmed"
+    },
+    {
+      "id": "INV-TEST-0860",
+      "userId": "USR-10025",
+      "investmentId": "COMM-201",
+      "investmentTitle": "Digital 24K Physical Gold Vault",
+      "investmentType": "community",
+      "paymentId": "PAY-TEST-02",
+      "transactionId": "TXN99887766",
+      "amount": 1500,
+      "lots": 0.1,
+      "rateAtInvestment": 15000,
+      "purchaseDate": "2026-10-12T10:30:30.860Z",
+      "currentRate": 15000,
+      "currentValue": 1500,
+      "status": "confirmed"
     }
   ],
   "notifications": [
+    {
+      "id": "NOTIF-WDR-APP-1791801030973",
+      "userId": "USR-10025",
+      "title": "Withdrawal Disbursed Successfully! 💸",
+      "message": "Your withdrawal of ₹15,000.02 for \"Pure 999 Silver Reserve\" has been processed! Reference: UTR-BANK-9988771122. Receipt proof has been uploaded.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-10-12T10:30:30.973Z"
+    },
+    {
+      "id": "NOTIF-WDR-USER-1791801030937",
+      "userId": "USR-10025",
+      "title": "Withdrawal Request Submitted",
+      "message": "Your withdrawal request of ₹15,000.02 for \"Pure 999 Silver Reserve\" has been received and is being processed by Admin.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-10-12T10:30:30.937Z"
+    },
+    {
+      "id": "NOTIF-WDR-ADMIN-1791801030917",
+      "userId": "admin",
+      "title": "New Withdrawal Request",
+      "message": "Rahul Sharma requested withdrawal of ₹15,000.02 for \"Pure 999 Silver Reserve\".",
+      "type": "alert",
+      "isRead": false,
+      "createdAt": "2026-10-12T10:30:30.937Z"
+    },
     {
       "id": "NOTIF-1791554218721",
       "userId": "USR-10025",
@@ -1298,5 +1347,39 @@
     "supportPhone": "+91 80 4910 8800",
     "minLotSize": 10,
     "disclaimerNotice": "Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding."
-  }
+  },
+  "withdrawals": [
+    {
+      "id": "WDR-030917",
+      "userId": "USR-10025",
+      "userName": "Rahul Sharma",
+      "userEmail": "investor@demo.com",
+      "userMobile": "+91 98123 45678",
+      "userInvestmentId": "INV-18721",
+      "investmentId": "COMM-202",
+      "investmentTitle": "Pure 999 Silver Reserve",
+      "investmentType": "commodity",
+      "tenure": "Flexible Liquidity",
+      "amountInvested": 15000,
+      "lots": 15.7895,
+      "payoutAmount": 15000.02,
+      "payoutMethod": "bank",
+      "bankDetails": {
+        "accountHolder": "Rahul Sharma",
+        "accountNumber": "50100492817263",
+        "ifsc": "HDFC0000123",
+        "bankName": "HDFC Bank",
+        "upiId": ""
+      },
+      "status": "approved",
+      "requestedAt": "2026-10-12T10:30:30.917Z",
+      "processedAt": "2026-10-12T10:30:30.972Z",
+      "processedBy": "USR-ADMIN-01",
+      "payoutTxnId": "UTR-BANK-9988771122",
+      "payoutProofUrl": "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=800&q=80",
+      "adminNotes": "Transferred via RTGS from ICICI bank account",
+      "rejectionReason": "",
+      "userNotes": "Tenure completed, please process withdrawal"
+    }
+  ]
 }

@@ -283,6 +283,7 @@ function getInitialData() {
         createdAt: '2026-10-07T08:00:00.000Z'
       }
     ],
+    withdrawals: [],
     settings: {
       upiId: 'growcapital@icici',
       payeeName: 'Apex Capital Ventures Ltd',
@@ -310,7 +311,9 @@ class Database {
   read() {
     try {
       const raw = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      if (!data.withdrawals) data.withdrawals = [];
+      return data;
     } catch (err) {
       console.error('Error reading DB, restoring initial state', err);
       const initial = getInitialData();
@@ -432,12 +435,12 @@ class Database {
     // Confirmed user investments for this campaign
     const records = data.user_investments.filter(ui => ui.investmentId === investmentId);
     
-    // Group by unique user
-    const userMap = new Map();
+    // Group by unique user to calculate user-level aggregations
+    const userTotals = new Map();
     records.forEach(r => {
       const u = data.users.find(user => user.id === r.userId);
-      if (!userMap.has(r.userId)) {
-        userMap.set(r.userId, {
+      if (!userTotals.has(r.userId)) {
+        userTotals.set(r.userId, {
           userId: r.userId,
           name: u?.name || 'Investor',
           email: u?.email || '',
@@ -447,13 +450,38 @@ class Database {
           investmentCount: 0
         });
       }
-      const existing = userMap.get(r.userId);
+      const existing = userTotals.get(r.userId);
       existing.totalInvested += Number(r.amount);
       existing.totalLots += Number(r.lots);
       existing.investmentCount += 1;
     });
 
-    return Array.from(userMap.values());
+    // Return individual entries (tickets) so repeat buyers have multiple entries in the pool
+    // Each entry has the user's details, ticket number, purchase amount, and their user totals
+    const entries = records.map((r, index) => {
+      const uTotals = userTotals.get(r.userId);
+      return {
+        ticketIndex: index + 1,
+        userInvestmentId: r.id,
+        userId: r.userId,
+        name: uTotals?.name || 'Investor',
+        email: uTotals?.email || '',
+        mobile: uTotals?.mobile || '',
+        ticketAmount: Number(r.amount),
+        ticketLots: Number(r.lots),
+        purchaseDate: r.purchaseDate,
+        transactionId: r.transactionId,
+        // Aggregated totals for this user across all their purchases
+        totalInvestedForUser: uTotals?.totalInvested || Number(r.amount),
+        totalLotsForUser: uTotals?.totalLots || Number(r.lots),
+        userPurchaseCount: uTotals?.investmentCount || 1,
+        // Common fields for compatibility
+        totalInvested: Number(r.amount),
+        totalLots: Number(r.lots)
+      };
+    });
+
+    return entries;
   }
 
   drawInvestmentWinner(investmentId, adminId) {
@@ -465,23 +493,25 @@ class Database {
       throw new Error('Lucky draw can only be conducted once the target amount is reached (100% funded).');
     }
 
-    const eligibleInvestors = this.getInvestmentInvestors(investmentId);
-    if (eligibleInvestors.length === 0) {
+    const eligibleTickets = this.getInvestmentInvestors(investmentId);
+    if (eligibleTickets.length === 0) {
       throw new Error('No confirmed investors found for this investment.');
     }
 
-    // Pick a random investor
-    const randomIndex = Math.floor(Math.random() * eligibleInvestors.length);
-    const winnerInvestor = eligibleInvestors[randomIndex];
+    // Pick a random ticket from all entries (where repeat buyers have multiple chances)
+    const randomIndex = Math.floor(Math.random() * eligibleTickets.length);
+    const winningTicket = eligibleTickets[randomIndex];
     const amountWon = Number(inv.targetAmount || inv.raisedAmount);
 
     inv.winner = {
-      userId: winnerInvestor.userId,
-      userName: winnerInvestor.name,
-      userEmail: winnerInvestor.email,
-      userMobile: winnerInvestor.mobile,
-      totalLots: winnerInvestor.totalLots,
-      totalInvested: winnerInvestor.totalInvested,
+      userId: winningTicket.userId,
+      winningTicketIndex: winningTicket.ticketIndex,
+      winningUserInvestmentId: winningTicket.userInvestmentId,
+      userName: winningTicket.name,
+      userEmail: winningTicket.email,
+      userMobile: winningTicket.mobile,
+      totalLots: winningTicket.totalLotsForUser,
+      totalInvested: winningTicket.totalInvestedForUser,
       amountWon: amountWon,
       selectedAt: new Date().toISOString(),
       selectedBy: adminId,
@@ -495,22 +525,24 @@ class Database {
     // User notification for winner
     data.notifications.unshift({
       id: `NOTIF-WIN-${Date.now()}`,
-      userId: winnerInvestor.userId,
+      userId: winningTicket.userId,
       title: '🏆 You Have Won the Full Target Jackpot!',
-      message: `Congratulations ${winnerInvestor.name}! You were randomly selected as the lucky winner for "${inv.title}"! Full payout of ₹${amountWon.toLocaleString('en-IN')} will be transferred to you. Check status in your dashboard.`,
+      message: `Congratulations ${winningTicket.name}! Your ticket (#${winningTicket.ticketIndex}) was randomly selected as the lucky winner for "${inv.title}"! Full payout of ₹${amountWon.toLocaleString('en-IN')} will be transferred to you. Check status in your dashboard.`,
       type: 'success',
       isRead: false,
       createdAt: new Date().toISOString()
     });
 
-    // Notify other investors
-    eligibleInvestors.forEach(invUser => {
-      if (invUser.userId !== winnerInvestor.userId) {
+    // Notify other investors (send once per unique user)
+    const notifiedUsers = new Set([winningTicket.userId]);
+    eligibleTickets.forEach(ticket => {
+      if (!notifiedUsers.has(ticket.userId)) {
+        notifiedUsers.add(ticket.userId);
         data.notifications.unshift({
-          id: `NOTIF-DRAW-${Date.now()}-${invUser.userId}`,
-          userId: invUser.userId,
+          id: `NOTIF-DRAW-${Date.now()}-${ticket.userId}`,
+          userId: ticket.userId,
           title: `Lucky Draw Winner Announced: ${inv.title}`,
-          message: `The random winner for ${inv.title} has been drawn: ${winnerInvestor.name}. Payout proof will be published by Admin.`,
+          message: `The random winner for ${inv.title} has been drawn: ${winningTicket.name}. Payout proof will be published by Admin.`,
           type: 'info',
           isRead: false,
           createdAt: new Date().toISOString()
@@ -754,6 +786,190 @@ class Database {
     data.settings = { ...data.settings, ...newSettings };
     this.write(data);
     return data.settings;
+  }
+
+  // --- Withdrawal Requests ---
+  getWithdrawals() {
+    const data = this.read();
+    return data.withdrawals || [];
+  }
+
+  getWithdrawalById(id) {
+    return this.getWithdrawals().find(w => w.id === id);
+  }
+
+  createWithdrawalRequest({
+    userId,
+    userInvestmentId,
+    payoutMethod, // 'bank' | 'upi'
+    accountHolder,
+    accountNumber,
+    ifsc,
+    bankName,
+    upiId,
+    userNotes
+  }) {
+    const data = this.read();
+    if (!data.withdrawals) data.withdrawals = [];
+
+    const userInv = data.user_investments.find(ui => ui.id === userInvestmentId && ui.userId === userId);
+    if (!userInv) throw new Error('Investment holding not found.');
+
+    if (userInv.withdrawalStatus === 'pending') {
+      throw new Error('A withdrawal request is already pending for this investment.');
+    }
+    if (userInv.withdrawalStatus === 'approved') {
+      throw new Error('Funds for this investment have already been withdrawn and disbursed.');
+    }
+
+    const liveInvestments = data.investments;
+    const liveItem = liveInvestments.find(i => i.id === userInv.investmentId);
+    const currentRate = liveItem ? liveItem.rate : userInv.currentRate;
+    const currentValue = liveItem && (liveItem.type === 'commodity' || liveItem.type === 'community')
+      ? Number((userInv.lots * currentRate).toFixed(2))
+      : Number(userInv.currentValue || userInv.amount);
+
+    const user = data.users.find(u => u.id === userId);
+
+    const withdrawalId = `WDR-${Date.now().toString().slice(-6)}`;
+    const newWithdrawal = {
+      id: withdrawalId,
+      userId: userId,
+      userName: user ? user.name : 'Investor',
+      userEmail: user ? user.email : '',
+      userMobile: user ? user.mobile : '',
+      userInvestmentId: userInvestmentId,
+      investmentId: userInv.investmentId,
+      investmentTitle: userInv.investmentTitle,
+      investmentType: userInv.investmentType,
+      tenure: liveItem?.tenure || 'Flexible Liquidity',
+      amountInvested: Number(userInv.amount),
+      lots: Number(userInv.lots),
+      payoutAmount: currentValue,
+      payoutMethod: payoutMethod || 'bank',
+      bankDetails: {
+        accountHolder: accountHolder || user?.name || '',
+        accountNumber: accountNumber || '',
+        ifsc: ifsc || '',
+        bankName: bankName || '',
+        upiId: upiId || ''
+      },
+      status: 'pending', // 'pending' | 'approved' | 'rejected'
+      requestedAt: new Date().toISOString(),
+      processedAt: null,
+      processedBy: null,
+      payoutTxnId: null,
+      payoutProofUrl: null,
+      adminNotes: '',
+      rejectionReason: '',
+      userNotes: userNotes || ''
+    };
+
+    data.withdrawals.unshift(newWithdrawal);
+
+    // Update investment status in user_investments
+    userInv.withdrawalStatus = 'pending';
+    userInv.withdrawalId = withdrawalId;
+
+    // Dispatches notification to admin
+    data.notifications.unshift({
+      id: `NOTIF-WDR-ADMIN-${Date.now()}`,
+      userId: 'admin',
+      title: 'New Withdrawal Request',
+      message: `${newWithdrawal.userName} requested withdrawal of ₹${currentValue.toLocaleString('en-IN')} for "${newWithdrawal.investmentTitle}".`,
+      type: 'alert',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    // Dispatches notification to user
+    data.notifications.unshift({
+      id: `NOTIF-WDR-USER-${Date.now()}`,
+      userId: userId,
+      title: 'Withdrawal Request Submitted',
+      message: `Your withdrawal request of ₹${currentValue.toLocaleString('en-IN')} for "${newWithdrawal.investmentTitle}" has been received and is being processed by Admin.`,
+      type: 'info',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    this.write(data);
+    return newWithdrawal;
+  }
+
+  approveWithdrawal(withdrawalId, adminId, { payoutTxnId, payoutProofUrl, adminNotes }) {
+    const data = this.read();
+    if (!data.withdrawals) data.withdrawals = [];
+
+    const wdr = data.withdrawals.find(w => w.id === withdrawalId);
+    if (!wdr) throw new Error('Withdrawal request not found.');
+    if (wdr.status !== 'pending') throw new Error(`Withdrawal request is already ${wdr.status}.`);
+
+    wdr.status = 'approved';
+    wdr.processedAt = new Date().toISOString();
+    wdr.processedBy = adminId;
+    wdr.payoutTxnId = payoutTxnId || `UTR-WDR-${Date.now().toString().slice(-6)}`;
+    wdr.payoutProofUrl = payoutProofUrl || null;
+    wdr.adminNotes = adminNotes || 'Withdrawal payout disbursed successfully.';
+
+    // Update user_investments
+    const userInv = data.user_investments.find(ui => ui.id === wdr.userInvestmentId);
+    if (userInv) {
+      userInv.withdrawalStatus = 'approved';
+      userInv.withdrawnAt = wdr.processedAt;
+      userInv.payoutTxnId = wdr.payoutTxnId;
+      userInv.payoutProofUrl = wdr.payoutProofUrl;
+      userInv.payoutAmount = wdr.payoutAmount;
+    }
+
+    // User notification
+    data.notifications.unshift({
+      id: `NOTIF-WDR-APP-${Date.now()}`,
+      userId: wdr.userId,
+      title: 'Withdrawal Disbursed Successfully! 💸',
+      message: `Your withdrawal of ₹${Number(wdr.payoutAmount).toLocaleString('en-IN')} for "${wdr.investmentTitle}" has been processed! Reference: ${wdr.payoutTxnId}. Receipt proof has been uploaded.`,
+      type: 'success',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    this.write(data);
+    return wdr;
+  }
+
+  rejectWithdrawal(withdrawalId, adminId, reason = 'Withdrawal criteria not met') {
+    const data = this.read();
+    if (!data.withdrawals) data.withdrawals = [];
+
+    const wdr = data.withdrawals.find(w => w.id === withdrawalId);
+    if (!wdr) throw new Error('Withdrawal request not found.');
+    if (wdr.status !== 'pending') throw new Error(`Withdrawal request is already ${wdr.status}.`);
+
+    wdr.status = 'rejected';
+    wdr.processedAt = new Date().toISOString();
+    wdr.processedBy = adminId;
+    wdr.rejectionReason = reason;
+
+    // Reset or update user_investments
+    const userInv = data.user_investments.find(ui => ui.id === wdr.userInvestmentId);
+    if (userInv) {
+      userInv.withdrawalStatus = 'rejected';
+      userInv.rejectionReason = reason;
+    }
+
+    // User notification
+    data.notifications.unshift({
+      id: `NOTIF-WDR-REJ-${Date.now()}`,
+      userId: wdr.userId,
+      title: 'Withdrawal Request Rejected',
+      message: `Your withdrawal request of ₹${Number(wdr.payoutAmount).toLocaleString('en-IN')} for "${wdr.investmentTitle}" was rejected. Reason: ${reason}`,
+      type: 'warning',
+      isRead: false,
+      createdAt: new Date().toISOString()
+    });
+
+    this.write(data);
+    return wdr;
   }
 }
 

@@ -80,6 +80,7 @@ router.get('/investments', authenticate, (req, res) => {
         currentValue,
         returns,
         returnsPercentage,
+        tenure: liveItem?.tenure || inv.tenure || 'Flexible Liquidity',
         investmentDetails: liveItem || null
       };
     });
@@ -91,4 +92,68 @@ router.get('/investments', authenticate, (req, res) => {
   }
 });
 
+// Request withdrawal for an investment
+router.post('/withdraw', authenticate, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const {
+      userInvestmentId,
+      payoutMethod,
+      accountHolder,
+      accountNumber,
+      ifsc,
+      bankName,
+      upiId,
+      userNotes
+    } = req.body;
+
+    if (!userInvestmentId) {
+      return res.status(400).json({ message: 'Investment holding ID is required.' });
+    }
+
+    if (payoutMethod === 'upi') {
+      if (!upiId || !upiId.trim()) {
+        return res.status(400).json({ message: 'Valid UPI ID is required.' });
+      }
+    } else {
+      if (!accountNumber || !ifsc) {
+        return res.status(400).json({ message: 'Bank account number and IFSC code are required.' });
+      }
+    }
+
+    const withdrawal = db.createWithdrawalRequest({
+      userId,
+      userInvestmentId,
+      payoutMethod,
+      accountHolder,
+      accountNumber,
+      ifsc,
+      bankName,
+      upiId,
+      userNotes
+    });
+
+    res.status(201).json({
+      message: 'Withdrawal request submitted successfully. Processing by Admin.',
+      withdrawal
+    });
+  } catch (err) {
+    console.error('Withdrawal request error:', err);
+    res.status(400).json({ message: err.message || 'Error processing withdrawal request.' });
+  }
+});
+
+// Get user's withdrawal requests
+router.get('/withdrawals', authenticate, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userWithdrawals = db.getWithdrawals().filter(w => w.userId === userId);
+    res.json({ withdrawals: userWithdrawals });
+  } catch (err) {
+    console.error('Get withdrawals error:', err);
+    res.status(500).json({ message: 'Error fetching withdrawal requests.' });
+  }
+});
+
 module.exports = router;
+
