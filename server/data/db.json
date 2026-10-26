@@ -234,7 +234,7 @@
     "disclaimerNotice": "Investments are subject to market, commodity and business risk. Please read full risk disclosures before proceeding.",
     "razorpayKeyId": "rzp_test_1DP5mmOlF5G5ag",
     "razorpayKeySecret": "s8Yd3p4lFj3n9Z1x7q2k5m0b",
-    "razorpayEnabled": true
+    "razorpayEnabled": false
   },
   "withdrawals": []
 }

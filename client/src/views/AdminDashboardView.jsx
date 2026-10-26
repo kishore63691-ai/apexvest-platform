@@ -5,7 +5,7 @@ import {
   AlertTriangle, Check, X, Eye, Settings, FileText, ArrowRight,
   Package, Tag, Search, Filter, Image as ImageIcon, Sparkles,
   Trophy, Upload, FileCheck, ExternalLink, Gift, Shuffle,
-  ArrowDownCircle, Landmark, Smartphone, RotateCcw
+  ArrowDownCircle, Landmark, Smartphone, RotateCcw, QrCode
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -598,6 +598,21 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
     } catch (err) {
       showToast(err.message, 'error');
     }
+  };
+
+  const handleQrImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('QR Image size should be under 5MB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSettings(prev => ({ ...prev, paymentQrUrl: reader.result }));
+      showToast('Payment QR image selected. Click Save Payment Settings to apply.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const [resettingData, setResettingData] = useState(false);
@@ -2003,6 +2018,74 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                   placeholder="50200088991122"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
                 />
+              </div>
+            </div>
+
+            {/* Official Payment QR Code Section */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Official Payment QR Code</span>
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono font-bold">
+                  Investor Facing
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+                {/* QR Preview Box */}
+                <div className="w-40 h-40 bg-white p-2 rounded-2xl shadow-xl flex flex-col items-center justify-center shrink-0 border border-slate-700">
+                  {settings.paymentQrUrl ? (
+                    <img
+                      src={settings.paymentQrUrl}
+                      alt="Company Payment QR"
+                      className="w-full h-full object-contain rounded-xl"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-500 text-xs p-2">
+                      <QrCode className="w-10 h-10 mx-auto text-slate-400 mb-1" />
+                      <span className="font-semibold text-slate-700 block">Auto UPI QR</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5">Generates from UPI ID</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload & Controls */}
+                <div className="space-y-3 flex-1 w-full text-xs">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Upload Custom Payment QR Image (PhonePe / GPay / Paytm / Bank QR)
+                    </label>
+                    <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl cursor-pointer bg-slate-950 transition text-slate-300 hover:text-white">
+                      <Upload className="w-4 h-4 text-amber-400" />
+                      <span className="font-semibold">{settings.paymentQrUrl ? 'Change Custom QR Image' : 'Upload QR Image (PNG/JPG)'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleQrImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {settings.paymentQrUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, paymentQrUrl: '' })}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
+                    >
+                      Remove custom QR (Revert to auto UPI QR)
+                    </button>
+                  )}
+
+                  <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1">
+                    <p className="font-bold text-amber-300">💡 Investor Payment Screen:</p>
+                    <p className="leading-relaxed text-slate-400">
+                      This QR Code will be prominently displayed inside the investor's payment modal. Investors can scan this code with any UPI app to transfer funds directly to your account.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

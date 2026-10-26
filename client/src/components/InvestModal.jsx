@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, CheckCircle, ArrowRight, ShieldCheck, Copy,
   Check, AlertTriangle, Clock, Upload, Building, Coins,
-  Lock, Landmark, Image as ImageIcon, Sparkles
+  Lock, Landmark, Image as ImageIcon, Sparkles, QrCode
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -339,36 +339,64 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
                   </span>
                 </div>
 
-                <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-medium">Company UPI ID (VPA)</span>
-                    <span className="font-mono text-sm font-bold text-amber-300 select-all">
-                      {companyDetails.upiId}
-                    </span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">
-                      Payee: <strong className="text-white">{companyDetails.payeeName}</strong>
-                    </span>
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                  {companyDetails.paymentQrUrl && (
+                    <div className="flex flex-col items-center shrink-0 p-2 bg-white rounded-xl shadow-md border border-slate-200">
+                      <img
+                        src={companyDetails.paymentQrUrl}
+                        alt="Payment QR"
+                        className="w-28 h-28 object-contain rounded"
+                      />
+                      <span className="text-[9px] text-slate-800 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
+                        <QrCode className="w-2.5 h-2.5 text-amber-600" />
+                        Scan to Pay
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex-1 w-full space-y-2">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block font-medium">Company UPI ID (VPA)</span>
+                      <div className="flex items-center justify-between gap-2 mt-0.5">
+                        <span className="font-mono text-sm font-bold text-amber-300 select-all break-all">
+                          {companyDetails.upiId}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyUpi}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                        >
+                          {copiedUpi ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-400 text-[11px]">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span className="text-[11px]">Copy UPI</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 text-[11px] space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Payee:</span>
+                        <span className="font-semibold text-white">{companyDetails.payeeName}</span>
+                      </div>
+                      {companyDetails.companyBankName && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Bank:</span>
+                          <span className="text-slate-300 font-mono text-[10px]">{companyDetails.companyBankName} • {companyDetails.companyAccountNumber}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyUpi}
-                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/40 flex items-center gap-1.5 transition cursor-pointer shrink-0"
-                  >
-                    {copiedUpi ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Open Google Pay, PhonePe, Paytm, or BHIM. Transfer the desired amount to the UPI ID above, then fill out the submission form below.
+                  Open Google Pay, PhonePe, Paytm, or BHIM. Scan the QR code above or transfer to the UPI ID, then fill out the submission form below.
                 </p>
               </div>
 

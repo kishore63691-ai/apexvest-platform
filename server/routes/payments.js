@@ -6,17 +6,36 @@ const Razorpay = require('razorpay');
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
-// Get platform company payment details (UPI & Bank info)
-router.get('/company-details', (req, res) => {
+// Get platform company payment details (UPI, Bank info, and Payment QR)
+router.get('/company-details', async (req, res) => {
   try {
     const settings = db.getSettings();
+    const upiId = settings.upiId || 'growcapital@icici';
+    const payeeName = settings.payeeName || 'Apex Capital Ventures Ltd';
+
+    // If admin set a custom QR URL or image, use it; otherwise generate dynamic QR from UPI ID
+    let qrUrl = settings.paymentQrUrl || null;
+    if (!qrUrl && upiId) {
+      try {
+        const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&tn=${encodeURIComponent('ApexVest Investment')}`;
+        qrUrl = await QRCode.toDataURL(upiUri, {
+          width: 320,
+          margin: 2,
+          color: { dark: '#020617', light: '#ffffff' }
+        });
+      } catch (e) {
+        qrUrl = null;
+      }
+    }
+
     res.json({
-      upiId: settings.upiId || 'growcapital@icici',
-      payeeName: settings.payeeName || 'Apex Capital Ventures Ltd',
+      upiId,
+      payeeName,
       companyBankName: settings.companyBankName || 'HDFC Bank Ltd',
       companyAccountNumber: settings.companyAccountNumber || '50200088991122',
       companyIfsc: settings.companyIfsc || 'HDFC0001234',
-      accountType: 'Current Account'
+      accountType: 'Current Account',
+      paymentQrUrl: qrUrl
     });
   } catch (err) {
     res.status(500).json({ message: 'Error retrieving payment details.' });

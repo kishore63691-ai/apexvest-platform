@@ -1,7 +1,8 @@
-﻿node_modules/
+node_modules/
 client/node_modules/
 client/dist/
 *.log
 .env
 .DS_Store
 Thumbs.db
+server/uploads/
