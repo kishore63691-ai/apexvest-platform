@@ -23,6 +23,10 @@ router.get('/qr', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'Target funding amount reached. This investment is 100% funded and closed to new investments.' });
     }
 
+    if (investment.type === 'commodity' || investment.type === 'community') {
+      return res.status(400).json({ message: 'Commodity reserves are a future option and currently locked.' });
+    }
+
     if (investment.status === 'inactive') {
       return res.status(400).json({ message: 'This investment opportunity is currently paused.' });
     }
@@ -96,6 +100,10 @@ router.post('/submit', authenticate, (req, res) => {
 
     if (investment.status === 'fully_funded' || (investment.raisedAmount && investment.raisedAmount >= investment.targetAmount)) {
       return res.status(400).json({ message: 'Target funding amount has been reached (100% funded). No further investments can be accepted for this campaign.' });
+    }
+
+    if (investment.type === 'commodity' || investment.type === 'community') {
+      return res.status(400).json({ message: 'Commodity reserves are a future option and currently locked.' });
     }
 
     const numAmount = Number(amount);
@@ -270,6 +278,10 @@ router.post('/razorpay/create-order', authenticate, async (req, res) => {
 
     if (investment.status === 'fully_funded' || (investment.raisedAmount && investment.raisedAmount >= investment.targetAmount)) {
       return res.status(400).json({ message: 'Target funding amount reached. This investment is 100% funded.' });
+    }
+
+    if (investment.type === 'commodity' || investment.type === 'community') {
+      return res.status(400).json({ message: 'Commodity reserves are a future option and currently locked.' });
     }
 
     if (investment.status === 'inactive') {

@@ -121,11 +121,12 @@
         "amountWon": 1000000,
         "selectedAt": "2026-10-09T13:24:34.599Z",
         "selectedBy": "USR-ADMIN-01",
-        "payoutStatus": "pending",
-        "payoutProofUrl": null,
-        "payoutTxnId": null,
-        "payoutNotes": "",
-        "payoutDisbursedAt": null
+        "payoutStatus": "disbursed",
+        "payoutProofUrl": "/uploads/proof-1791807734641-489319780.jpg",
+        "payoutTxnId": "UTR-PAYOUT-724716",
+        "payoutNotes": "Full target jackpot transferred to verified bank account.",
+        "payoutDisbursedAt": "2026-10-12T12:22:14.669Z",
+        "verifiedByAdmin": "USR-ADMIN-01"
       }
     },
     {
@@ -655,8 +656,12 @@
       "currentRate": 500,
       "currentValue": 500,
       "status": "confirmed",
-      "withdrawalStatus": "pending",
-      "withdrawalId": "WDR-347625"
+      "withdrawalStatus": "approved",
+      "withdrawalId": "WDR-347625",
+      "withdrawnAt": "2026-10-12T12:21:49.761Z",
+      "payoutTxnId": "UTR-WDR-696521",
+      "payoutProofUrl": "/uploads/proof-1791807709728-864160031.jpg",
+      "payoutAmount": 500
     },
     {
       "id": "INV-14415",
@@ -768,7 +773,13 @@
       "purchaseDate": "2026-10-07T10:19:22.809Z",
       "currentRate": 10,
       "currentValue": 5000,
-      "status": "confirmed"
+      "status": "confirmed",
+      "withdrawalStatus": "approved",
+      "withdrawalId": "WDR-001372",
+      "withdrawnAt": "2026-10-12T11:37:20.111Z",
+      "payoutTxnId": "UTR-WDR-029772",
+      "payoutProofUrl": "/uploads/proof-1791805040068-885985649.jpg",
+      "payoutAmount": 5000
     },
     {
       "id": "INV-57959",
@@ -852,6 +863,51 @@
     }
   ],
   "notifications": [
+    {
+      "id": "NOTIF-PROOF-1791807734669",
+      "userId": "USR-10025",
+      "title": "💸 Payout Proof Published!",
+      "message": "Your lucky draw prize of ₹10,00,000 for \"Digital 24K Physical Gold Vault\" has been disbursed! Reference: UTR-PAYOUT-724716. The transfer proof receipt is now viewable.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-10-12T12:22:14.669Z"
+    },
+    {
+      "id": "NOTIF-WDR-APP-1791807709761",
+      "userId": "USR-ADMIN-01",
+      "title": "Withdrawal Disbursed Successfully! 💸",
+      "message": "Your withdrawal of ₹500 for \"Target Test Pool\" has been processed! Reference: UTR-WDR-696521. Receipt proof has been uploaded.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-10-12T12:21:49.776Z"
+    },
+    {
+      "id": "NOTIF-WDR-APP-1791805040111",
+      "userId": "USR-10025",
+      "title": "Withdrawal Disbursed Successfully! 💸",
+      "message": "Your withdrawal of ₹5,000 for \"Green Agro Hydroponics Hub\" has been processed! Reference: UTR-WDR-029772. Receipt proof has been uploaded.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-10-12T11:37:20.111Z"
+    },
+    {
+      "id": "NOTIF-WDR-USER-1791805001402",
+      "userId": "USR-10025",
+      "title": "Withdrawal Request Submitted",
+      "message": "Your withdrawal request of ₹5,000 for \"Green Agro Hydroponics Hub\" has been received and is being processed by Admin.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-10-12T11:36:41.402Z"
+    },
+    {
+      "id": "NOTIF-WDR-ADMIN-1791805001372",
+      "userId": "admin",
+      "title": "New Withdrawal Request",
+      "message": "Rahul Sharma requested withdrawal of ₹5,000 for \"Green Agro Hydroponics Hub\".",
+      "type": "alert",
+      "isRead": false,
+      "createdAt": "2026-10-12T11:36:41.401Z"
+    },
     {
       "id": "NOTIF-WDR-USER-1791804347651",
       "userId": "USR-ADMIN-01",
@@ -1316,6 +1372,38 @@
   },
   "withdrawals": [
     {
+      "id": "WDR-001372",
+      "userId": "USR-10025",
+      "userName": "Rahul Sharma",
+      "userEmail": "investor@demo.com",
+      "userMobile": "+91 98123 45678",
+      "userInvestmentId": "INV-62809",
+      "investmentId": "BIZ-102",
+      "investmentTitle": "Green Agro Hydroponics Hub",
+      "investmentType": "business",
+      "tenure": "18 Months",
+      "amountInvested": 5000,
+      "lots": 500,
+      "payoutAmount": 5000,
+      "payoutMethod": "bank",
+      "bankDetails": {
+        "accountHolder": "Rahul Sharma",
+        "accountNumber": "6986986986",
+        "ifsc": "8T698696",
+        "bankName": "m,b,bb",
+        "upiId": ""
+      },
+      "status": "approved",
+      "requestedAt": "2026-10-12T11:36:41.372Z",
+      "processedAt": "2026-10-12T11:37:20.111Z",
+      "processedBy": "USR-ADMIN-01",
+      "payoutTxnId": "UTR-WDR-029772",
+      "payoutProofUrl": "/uploads/proof-1791805040068-885985649.jpg",
+      "adminNotes": "Withdrawal of ₹5,000 disbursed via BANK",
+      "rejectionReason": "",
+      "userNotes": ""
+    },
+    {
       "id": "WDR-347625",
       "userId": "USR-ADMIN-01",
       "userName": "Platform Administrator",
@@ -1337,13 +1425,13 @@
         "bankName": ";.,.,f','",
         "upiId": ""
       },
-      "status": "pending",
+      "status": "approved",
       "requestedAt": "2026-10-12T11:25:47.625Z",
-      "processedAt": null,
-      "processedBy": null,
-      "payoutTxnId": null,
-      "payoutProofUrl": null,
-      "adminNotes": "",
+      "processedAt": "2026-10-12T12:21:49.761Z",
+      "processedBy": "USR-ADMIN-01",
+      "payoutTxnId": "UTR-WDR-696521",
+      "payoutProofUrl": "/uploads/proof-1791807709728-864160031.jpg",
+      "adminNotes": "Withdrawal of ₹500 disbursed via BANK",
       "rejectionReason": "",
       "userNotes": ""
     },

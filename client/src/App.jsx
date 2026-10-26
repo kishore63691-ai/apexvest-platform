@@ -53,6 +53,9 @@ function MainApp() {
   }, []);
 
   const handleOpenInvest = (investment) => {
+    if (investment?.type === 'commodity' || investment?.type === 'community') {
+      return; // Locked future option
+    }
     if (!user) {
       openAuthModal('login', 'user');
       return;

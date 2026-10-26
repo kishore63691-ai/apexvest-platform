@@ -45,10 +45,13 @@ export default function HomeView({ investments, onInvest, onNavigate }) {
             </button>
             <button
               onClick={() => onNavigate('community')}
-              className="px-8 py-4 btn-primary-amber text-xs sm:text-sm flex items-center gap-3 shadow-2xl cursor-pointer group"
+              className="px-6 py-4 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs sm:text-sm flex items-center gap-2.5 backdrop-blur-md opacity-85 hover:opacity-100 transition cursor-pointer group shadow-xl"
             >
-              <Coins className="w-4 h-4 stroke-[2.5]" />
+              <Lock className="w-4 h-4 text-amber-400 stroke-[2.5]" />
               <span>Explore Bullion & Land Vaults</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30 font-bold uppercase tracking-wider">
+                Future Option
+              </span>
             </button>
           </div>
 
@@ -106,26 +109,35 @@ export default function HomeView({ investments, onInvest, onNavigate }) {
             </div>
           </div>
 
-          {/* Option B Banner */}
-          <div className="p-7 rounded-3xl glass-panel-amber card-hover-glow flex flex-col justify-between relative overflow-hidden group">
+          {/* Option B Banner (Locked - Transparent Future Option) */}
+          <div className="p-7 rounded-3xl glass-panel-amber border border-amber-500/40 border-dashed opacity-75 hover:opacity-90 backdrop-blur-md flex flex-col justify-between relative overflow-hidden group transition-all">
             <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/20 transition-all duration-500" />
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider mb-3">
-                <Coins className="w-3.5 h-3.5" />
-                <span>OPTION B – Commodity & Asset Reserves</span>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>OPTION B – Commodity & Asset Reserves</span>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/40 text-[10px] font-mono font-bold tracking-wider">
+                  <Lock className="w-3 h-3 text-amber-300" />
+                  FUTURE OPTION • LOCKED
+                </span>
               </div>
-              <h2 className="text-2xl font-black text-white tracking-tight">Physical Gold, Silver & Commercial Land</h2>
+              <h2 className="text-2xl font-black text-white/95 tracking-tight">Physical Gold, Silver & Commercial Land</h2>
               <p className="text-xs text-slate-300 mt-2.5 leading-relaxed">
-                Invest in real asset reserves where the <strong className="text-amber-300 font-bold">Admin controls and updates live market rates</strong> (e.g., Gold = ₹15,000). Your unit value reflects real-time spot rates with vault custody.
+                Physical asset reserves with admin-managed live spot pricing. <strong className="text-amber-300 font-bold">This option is locked as an upcoming future release.</strong> Vaults and pricing are presented in transparent preview mode.
               </p>
             </div>
             <div className="mt-6 flex items-center justify-between pt-4 border-t border-amber-500/20">
-              <span className="text-xs font-mono font-semibold text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-500/30">Admin Managed Spot Rates</span>
+              <span className="text-xs font-mono font-semibold text-amber-300/90 bg-amber-950/70 px-2.5 py-1 rounded-lg border border-amber-500/30">
+                🔒 Transparent Preview Mode
+              </span>
               <button
                 onClick={() => onNavigate('community')}
-                className="btn-primary-amber px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition shadow-md"
               >
-                <span>View Asset Vaults</span>
+                <Lock className="w-3.5 h-3.5" />
+                <span>View Future Option Vaults</span>
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
@@ -194,26 +206,34 @@ export default function HomeView({ investments, onInvest, onNavigate }) {
             </div>
           </div>
 
-          {/* Commodity Asset Reserves Channel Portal */}
-          <div className="p-8 rounded-3xl glass-panel-amber border border-amber-500/30 flex flex-col justify-between relative overflow-hidden group">
+          {/* Commodity Asset Reserves Channel Portal (Locked - Transparent Future Option) */}
+          <div className="p-8 rounded-3xl glass-panel-amber border border-amber-500/40 border-dashed opacity-75 hover:opacity-90 backdrop-blur-md flex flex-col justify-between relative overflow-hidden group transition-all">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 border border-amber-500/30">
                   <Coins className="w-3.5 h-3.5" />
                   <span>Commodity Asset Reserves Portal</span>
                 </span>
-                <span className="text-xs font-mono font-bold text-amber-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                  {commodityItems.length} Asset Vaults
+                <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-300 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-500/40 shadow-sm">
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  FUTURE OPTION (LOCKED)
                 </span>
               </div>
-              <h3 className="text-2xl font-black text-white">
+              <h3 className="text-2xl font-black text-white/95">
                 Physical Gold, Silver & Land Depository
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Fractional physical bullion and prime land backed by insured custody. Features <strong>Admin live spot rate repricing</strong> and <strong>100% Target Lucky Draw Pools</strong>!
+                Fractional physical bullion and prime land backed by insured custody. Features Admin live spot rate repricing and 100% Target Lucky Draw Pools. <span className="text-amber-300 font-bold">This module is locked as an upcoming future option.</span>
               </p>
 
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 space-y-2 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/20 space-y-2 text-xs">
+                <div className="flex justify-between text-slate-300">
+                  <span className="text-slate-500">Status:</span>
+                  <span className="font-semibold text-amber-300 flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    Locked • Future Option
+                  </span>
+                </div>
                 <div className="flex justify-between text-slate-300">
                   <span className="text-slate-500">Spot Pricing:</span>
                   <span className="font-semibold text-amber-300">Admin Managed Live Gram/Sq.Ft Rate</span>
@@ -232,9 +252,10 @@ export default function HomeView({ investments, onInvest, onNavigate }) {
             <div className="pt-6 mt-6 border-t border-amber-500/20">
               <button
                 onClick={() => onNavigate('community')}
-                className="w-full py-3.5 btn-primary-amber font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/20"
+                className="w-full py-3.5 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 font-black text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/10 text-amber-300 transition"
               >
-                <span>Enter Commodity Reserves Portal ({commodityItems.length} Products)</span>
+                <Lock className="w-4 h-4" />
+                <span>Preview Future Commodity Vaults ({commodityItems.length} Products)</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

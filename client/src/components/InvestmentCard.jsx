@@ -24,14 +24,20 @@ export default function InvestmentCard({ investment, onInvest }) {
   return (
     <>
       <div className={`glass-panel card-hover-glow rounded-3xl overflow-hidden transition-all duration-300 flex flex-col group relative ${
-        isFullyFunded ? 'border-amber-500/40 shadow-amber-500/10' : 'hover:border-emerald-500/40'
+        !isBusiness
+          ? 'opacity-80 hover:opacity-95 bg-slate-950/40 backdrop-blur-md border border-amber-500/40 border-dashed shadow-lg shadow-amber-500/5'
+          : isFullyFunded
+          ? 'border-amber-500/40 shadow-amber-500/10'
+          : 'hover:border-emerald-500/40'
       }`}>
         {/* Header Image & Badges */}
         <div className="relative h-52 w-full overflow-hidden bg-slate-950">
           <img
             src={investment.image}
             alt={investment.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-85 group-hover:opacity-100"
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${
+              !isBusiness ? 'opacity-70 group-hover:opacity-85 filter saturate-90' : 'opacity-85 group-hover:opacity-100'
+            }`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0f1d] via-[#0a0f1d]/40 to-transparent" />
 
@@ -45,7 +51,12 @@ export default function InvestmentCard({ investment, onInvest }) {
               {investment.category}
             </span>
 
-            {isFullyFunded ? (
+            {!isBusiness ? (
+              <span className="text-[11px] font-extrabold px-3 py-1 rounded-xl bg-amber-500/25 text-amber-200 border border-amber-500/40 backdrop-blur-md flex items-center gap-1 shadow-md">
+                <Lock className="w-3.5 h-3.5 text-amber-300" />
+                Future Option (Locked)
+              </span>
+            ) : isFullyFunded ? (
               <span className="text-[11px] font-extrabold px-3 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 flex items-center gap-1 shadow-lg shadow-amber-500/30">
                 <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
                 Target Reached (100%)
@@ -192,7 +203,20 @@ export default function InvestmentCard({ investment, onInvest }) {
 
           {/* Interactive CTA */}
           <div className="pt-2">
-            {isFullyFunded ? (
+            {!isBusiness ? (
+              <div className="space-y-1.5">
+                <button
+                  disabled
+                  className="w-full py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300/80 text-xs font-bold cursor-not-allowed flex items-center justify-center gap-2 backdrop-blur-md shadow-sm"
+                >
+                  <Lock className="w-4 h-4 text-amber-400" />
+                  <span>LOCKED • FUTURE OPTION</span>
+                </button>
+                <p className="text-[10px] text-center text-amber-300/80 font-medium">
+                  🔒 Transparent preview mode • Orders unlock in future release
+                </p>
+              </div>
+            ) : isFullyFunded ? (
               <div className="space-y-1.5">
                 <button
                   disabled
@@ -201,11 +225,6 @@ export default function InvestmentCard({ investment, onInvest }) {
                   <Lock className="w-4 h-4" />
                   <span>Target Reached • Investments Closed</span>
                 </button>
-                {!isBusiness && !winner && (
-                  <p className="text-[10px] text-center text-amber-400 font-semibold animate-pulse">
-                    🎲 Target reached! Lucky Draw is being conducted for this Commodity Reserve.
-                  </p>
-                )}
               </div>
             ) : (
               <button

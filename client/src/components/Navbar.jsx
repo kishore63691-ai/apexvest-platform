@@ -15,7 +15,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAuth }) {
   const navLinks = [
     { id: 'home', label: 'Home' },
     { id: 'business', label: 'Business Funding (₹10/Lot)' },
-    { id: 'community', label: 'Commodity Reserves (Gold/Silver)' },
+    { id: 'community', label: 'Commodity Reserves', isLockedFuture: true },
     ...(user ? [
       { id: 'portfolio', label: 'My Investments' },
       { id: 'transactions', label: 'Transactions' },
@@ -71,17 +71,27 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAuth }) {
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                   activeTab === item.id
                     ? item.highlight
                       ? 'btn-primary-amber shadow-md shadow-amber-500/25'
+                      : item.isLockedFuture
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-md shadow-amber-500/20'
                       : 'btn-primary-emerald shadow-md shadow-emerald-500/25'
                     : item.highlight
                     ? 'text-amber-400 hover:bg-amber-500/10'
+                    : item.isLockedFuture
+                    ? 'text-amber-300/80 hover:text-amber-200 hover:bg-amber-500/10 opacity-80 hover:opacity-100'
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
                 }`}
               >
-                {item.label}
+                {item.isLockedFuture && <span className="text-[11px]">🔒</span>}
+                <span>{item.label}</span>
+                {item.isLockedFuture && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase font-mono tracking-wider font-extrabold">
+                    Future Option
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -224,13 +234,21 @@ export default function Navbar({ activeTab, setActiveTab, onOpenAuth }) {
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold ${
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-between ${
                 activeTab === item.id
                   ? 'bg-slate-800 text-emerald-400'
                   : 'text-slate-300 hover:bg-slate-900'
               }`}
             >
-              {item.label}
+              <div className="flex items-center gap-1.5">
+                {item.isLockedFuture && <span>🔒</span>}
+                <span>{item.label}</span>
+              </div>
+              {item.isLockedFuture && (
+                <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono font-bold">
+                  Future Option
+                </span>
+              )}
             </button>
           ))}
           {!user && (

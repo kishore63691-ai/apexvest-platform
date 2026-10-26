@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X, CheckCircle, ArrowRight, ShieldCheck, QrCode, Copy,
   Check, AlertTriangle, Clock, Upload, Sparkles, Building, Coins,
-  CreditCard, Smartphone, Zap
+  CreditCard, Smartphone, Zap, Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
@@ -83,6 +83,42 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
   }, [amount, investment]);
 
   if (!isOpen || !investment) return null;
+
+  if (investment.type === 'commodity' || investment.type === 'community') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+        <div className="glass-panel p-8 rounded-3xl max-w-md w-full text-center border border-amber-500/40 border-dashed shadow-2xl relative space-y-5 bg-slate-900/60 backdrop-blur-xl">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 mx-auto flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <Lock className="w-8 h-8 text-amber-400" />
+          </div>
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Future Option • Locked
+            </span>
+            <h3 className="text-xl font-black text-white mt-3">{investment.title}</h3>
+            <p className="text-xs text-slate-300 leading-relaxed mt-2">
+              Commodity & Bullion Reserve investments are reserved as an upcoming <strong>Future Option</strong>. Orders are currently locked while live rates are shown in preview mode.
+            </p>
+          </div>
+          <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-amber-500/20 text-xs text-amber-300 font-mono">
+            Live Spot Valuation: ₹{Number(investment.rate).toLocaleString('en-IN')}/{investment.unitName || 'unit'}
+          </div>
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs transition"
+          >
+            Close Preview
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Razorpay Checkout Trigger
   const handleRazorpayPay = async () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, SlidersHorizontal, Building, Coins, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, Filter, SlidersHorizontal, Building, Coins, Sparkles, RefreshCw, Lock } from 'lucide-react';
 import InvestmentCard from '../components/InvestmentCard';
 
 export default function InvestmentsView({ investments, onInvest, onRefresh }) {
@@ -105,7 +105,11 @@ export default function InvestmentsView({ investments, onInvest, onRefresh }) {
               }`}
             >
               <Coins className="w-3.5 h-3.5" />
-              Commodity Assets
+              <span>Commodity Assets</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/25 text-amber-200 border border-amber-500/30 font-mono font-bold flex items-center gap-0.5">
+                <Lock className="w-2.5 h-2.5" />
+                Future Option
+              </span>
             </button>
           </div>
         </div>
@@ -144,6 +148,24 @@ export default function InvestmentsView({ investments, onInvest, onRefresh }) {
           </div>
         </div>
       </div>
+
+      {/* Commodity Future Option Transparent Notice */}
+      {selectedType === 'commodity' && (
+        <div className="p-4 rounded-2xl glass-panel-amber border border-amber-500/40 border-dashed backdrop-blur-md opacity-85 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">Commodity Reserves are locked as a Future Option</p>
+              <p className="text-[11px] text-slate-300">Physical bullion and land vaults are presented in transparent preview mode only.</p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0 font-bold">
+            🔒 PREVIEW ONLY
+          </span>
+        </div>
+      )}
 
       {/* Results Header */}
       <div className="flex items-center justify-between text-xs text-slate-400">

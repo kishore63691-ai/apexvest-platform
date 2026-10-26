@@ -819,9 +819,14 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
           </div>
 
           <div className="p-5 rounded-2xl glass-panel card-hover-glow border-amber-500/30">
-            <span className="text-[11px] text-slate-400 font-semibold">Commodity Assets</span>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] text-slate-400 font-semibold">Commodity Assets</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold">
+                🔒 Future Option
+              </span>
+            </div>
             <p className="text-2xl font-black text-amber-300 mt-1">₹{(stats.commodityFunding || stats.communityFunding || 0).toLocaleString('en-IN')}</p>
-            <span className="text-[10px] text-slate-400 font-mono mt-1 block">Option B Total Raised</span>
+            <span className="text-[10px] text-slate-400 font-mono mt-1 block">Option B (Locked Preview)</span>
           </div>
 
           <div className="p-5 rounded-2xl glass-panel card-hover-glow border-emerald-500/30">
@@ -995,11 +1000,14 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                 </button>
                 <button
                   onClick={() => setCatalogTypeFilter('commodity')}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 ${
                     catalogTypeFilter === 'commodity' || catalogTypeFilter === 'community' ? 'bg-amber-500/20 text-amber-400' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Commodities
+                  <span>Commodities</span>
+                  <span className="text-[9px] px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    🔒 Future Option
+                  </span>
                 </button>
               </div>
             </div>
