@@ -28,22 +28,37 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
     payeeName: 'Apex Capital Ventures Ltd',
     companyBankName: 'HDFC Bank Ltd',
     companyAccountNumber: '50200088991122',
-    companyIfsc: 'HDFC0001234'
+    companyIfsc: 'HDFC0001234',
+    paymentQrUrl: ''
   });
+  const [qrImageError, setQrImageError] = useState(false);
 
   // Fetch company payment details
+  const fetchCompanyDetails = async () => {
+    try {
+      const res = await fetch(`/api/payments/company-details?t=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.upiId) {
+          setCompanyDetails(data);
+          setQrImageError(false);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching company details:', err);
+    }
+  };
+
   useEffect(() => {
-    fetch('/api/payments/company-details')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.upiId) setCompanyDetails(data);
-      })
-      .catch(() => {});
+    fetchCompanyDetails();
   }, []);
 
-  // Reset state when opening modal with a new investment
+  // Reset state and re-fetch company details whenever modal is opened
   useEffect(() => {
     if (investment && isOpen) {
+      fetchCompanyDetails();
       setError('');
       setSubmittedSuccess(false);
       setSubmittedData(null);
@@ -339,22 +354,27 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  {companyDetails.paymentQrUrl && (
-                    <div className="flex flex-col items-center shrink-0 p-2 bg-white rounded-xl shadow-md border border-slate-200">
-                      <img
-                        src={companyDetails.paymentQrUrl}
-                        alt="Payment QR"
-                        className="w-28 h-28 object-contain rounded"
-                      />
-                      <span className="text-[9px] text-slate-800 font-bold uppercase tracking-wider mt-1 flex items-center gap-1">
-                        <QrCode className="w-2.5 h-2.5 text-amber-600" />
-                        Scan to Pay
-                      </span>
-                    </div>
-                  )}
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+                  {/* Official Payment QR Box - Always visible */}
+                  <div className="flex flex-col items-center shrink-0 p-2.5 bg-white rounded-2xl shadow-lg border-2 border-amber-500/30 w-32 relative group">
+                    <img
+                      src={
+                        qrImageError
+                          ? `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(companyDetails.upiUri || `upi://pay?pa=${companyDetails.upiId}&pn=${encodeURIComponent(companyDetails.payeeName)}&cu=INR`)}`
+                          : (companyDetails.paymentQrUrl || `/api/payments/qr-image?t=${Date.now()}`)
+                      }
+                      alt="Official Payment QR"
+                      onError={() => setQrImageError(true)}
+                      className="w-28 h-28 object-contain rounded-lg"
+                    />
+                    <span className="text-[9px] text-slate-900 font-extrabold uppercase tracking-wider mt-1.5 flex items-center gap-1 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300 shadow-xs">
+                      <QrCode className="w-3 h-3 text-amber-700" />
+                      Scan to Pay
+                    </span>
+                  </div>
 
-                  <div className="flex-1 w-full space-y-2">
+                  {/* UPI Details & Quick Copy */}
+                  <div className="flex-1 w-full space-y-2.5">
                     <div>
                       <span className="text-[10px] text-slate-400 block font-medium">Company UPI ID (VPA)</span>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -383,7 +403,7 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
 
                     <div className="pt-2 border-t border-slate-800/80 text-[11px] space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Payee:</span>
+                        <span className="text-slate-400">Payee Name:</span>
                         <span className="font-semibold text-white">{companyDetails.payeeName}</span>
                       </div>
                       {companyDetails.companyBankName && (
@@ -393,6 +413,15 @@ export default function InvestModal({ investment, isOpen, onClose, onSuccess }) 
                         </div>
                       )}
                     </div>
+
+                    {/* Mobile Quick UPI Intent Link */}
+                    <a
+                      href={companyDetails.upiUri || `upi://pay?pa=${companyDetails.upiId}&pn=${encodeURIComponent(companyDetails.payeeName)}&cu=INR&tn=${encodeURIComponent('ApexVest Investment')}`}
+                      className="inline-flex sm:hidden items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/40 text-xs font-bold transition"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Tap to Pay with UPI App</span>
+                    </a>
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">

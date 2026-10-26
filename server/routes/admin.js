@@ -100,6 +100,40 @@ router.put('/settings', requireAdmin, (req, res) => {
   }
 });
 
+// Dedicated Instant Payment QR Upload & Save endpoint
+router.post('/payment-qr', requireAdmin, (req, res) => {
+  try {
+    const { paymentQrUrl } = req.body;
+    if (!paymentQrUrl) {
+      return res.status(400).json({ message: 'QR image data or URL is required.' });
+    }
+    const updated = db.updateSettings({ paymentQrUrl });
+    res.json({
+      success: true,
+      message: 'Official Payment QR code saved successfully.',
+      paymentQrUrl: updated.paymentQrUrl
+    });
+  } catch (err) {
+    console.error('Error saving payment QR:', err);
+    res.status(500).json({ message: 'Failed to save Payment QR code.' });
+  }
+});
+
+// Remove custom Payment QR (revert to auto-generated UPI QR)
+router.delete('/payment-qr', requireAdmin, (req, res) => {
+  try {
+    const updated = db.updateSettings({ paymentQrUrl: '' });
+    res.json({
+      success: true,
+      message: 'Custom Payment QR removed. System reverted to auto-generated UPI QR.',
+      paymentQrUrl: ''
+    });
+  } catch (err) {
+    console.error('Error removing payment QR:', err);
+    res.status(500).json({ message: 'Failed to remove Payment QR.' });
+  }
+});
+
 // Reset all platform transaction & investment data to 0
 router.post('/reset-data', requireAdmin, (req, res) => {
   try {

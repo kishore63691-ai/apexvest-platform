@@ -600,19 +600,96 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
     }
   };
 
+  const [uploadingQr, setUploadingQr] = useState(false);
+
   const handleQrImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('QR Image size should be under 5MB.', 'error');
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('QR Image size should be under 10MB.', 'error');
       return;
     }
+
+    setUploadingQr(true);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setSettings(prev => ({ ...prev, paymentQrUrl: reader.result }));
-      showToast('Payment QR image selected. Click Save Payment Settings to apply.');
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        try {
+          // Compress and resize image to sharp 480x480 max
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 480;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get optimized base64
+          const optimizedDataUrl = canvas.toDataURL('image/png');
+
+          // Immediately save to server
+          const res = await fetch('/api/admin/payment-qr', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ paymentQrUrl: optimizedDataUrl })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Failed to save QR code');
+
+          setSettings(prev => ({ ...prev, paymentQrUrl: data.paymentQrUrl || optimizedDataUrl }));
+          showToast('Official Payment QR uploaded & saved successfully! Investors can now see it.');
+        } catch (err) {
+          console.error('QR upload error:', err);
+          showToast(err.message || 'Failed to upload QR code', 'error');
+        } finally {
+          setUploadingQr(false);
+        }
+      };
+      img.onerror = () => {
+        setUploadingQr(false);
+        showToast('Invalid image file.', 'error');
+      };
+      img.src = event.target.result;
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemoveQr = async () => {
+    try {
+      setUploadingQr(true);
+      const res = await fetch('/api/admin/payment-qr', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to remove QR');
+
+      setSettings(prev => ({ ...prev, paymentQrUrl: '' }));
+      showToast('Custom QR removed. System reverted to auto UPI QR.');
+    } catch (err) {
+      showToast(err.message || 'Failed to remove QR', 'error');
+    } finally {
+      setUploadingQr(false);
+    }
   };
 
   const [resettingData, setResettingData] = useState(false);
@@ -2035,18 +2112,32 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
 
               <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
                 {/* QR Preview Box */}
-                <div className="w-40 h-40 bg-white p-2 rounded-2xl shadow-xl flex flex-col items-center justify-center shrink-0 border border-slate-700">
-                  {settings.paymentQrUrl ? (
-                    <img
-                      src={settings.paymentQrUrl}
-                      alt="Company Payment QR"
-                      className="w-full h-full object-contain rounded-xl"
-                    />
+                <div className="w-44 h-44 bg-white p-2.5 rounded-2xl shadow-xl flex flex-col items-center justify-center shrink-0 border-2 border-slate-700 relative overflow-hidden group">
+                  {uploadingQr ? (
+                    <div className="text-center p-3">
+                      <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <span className="text-[11px] font-bold text-slate-800 block">Uploading & Saving...</span>
+                      <span className="text-[9px] text-slate-500">Publishing for investors</span>
+                    </div>
+                  ) : settings.paymentQrUrl ? (
+                    <>
+                      <img
+                        src={settings.paymentQrUrl}
+                        alt="Company Payment QR"
+                        className="w-full h-full object-contain rounded-xl"
+                      />
+                      <span className="absolute bottom-1.5 px-2 py-0.5 rounded-full bg-emerald-600/90 text-white font-bold text-[9px] tracking-wide shadow">
+                        ✓ Active Custom QR
+                      </span>
+                    </>
                   ) : (
                     <div className="text-center text-slate-500 text-xs p-2">
-                      <QrCode className="w-10 h-10 mx-auto text-slate-400 mb-1" />
-                      <span className="font-semibold text-slate-700 block">Auto UPI QR</span>
+                      <QrCode className="w-12 h-12 mx-auto text-slate-400 mb-1" />
+                      <span className="font-bold text-slate-800 block">Auto UPI QR</span>
                       <span className="text-[10px] text-slate-500 block mt-0.5">Generates from UPI ID</span>
+                      <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold text-[9px]">
+                        Default Active
+                      </span>
                     </div>
                   )}
                 </div>
@@ -2054,15 +2145,19 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                 {/* Upload & Controls */}
                 <div className="space-y-3 flex-1 w-full text-xs">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Upload Custom Payment QR Image (PhonePe / GPay / Paytm / Bank QR)
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>Upload Custom Payment QR Image (PhonePe / GPay / Paytm / Bank QR)</span>
+                      <span className="text-[10px] text-amber-400 font-normal">Auto-saves on select</span>
                     </label>
-                    <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl cursor-pointer bg-slate-950 transition text-slate-300 hover:text-white">
+                    <label className={`flex items-center justify-center gap-2 p-3.5 border-2 border-dashed ${uploadingQr ? 'opacity-50 pointer-events-none' : 'border-slate-700 hover:border-amber-500/60 cursor-pointer'} rounded-xl bg-slate-950 transition text-slate-300 hover:text-white`}>
                       <Upload className="w-4 h-4 text-amber-400" />
-                      <span className="font-semibold">{settings.paymentQrUrl ? 'Change Custom QR Image' : 'Upload QR Image (PNG/JPG)'}</span>
+                      <span className="font-semibold">
+                        {uploadingQr ? 'Uploading & Optimizing QR...' : settings.paymentQrUrl ? 'Replace Custom QR Image' : 'Select QR Image to Upload (PNG/JPG)'}
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
+                        disabled={uploadingQr}
                         onChange={handleQrImageUpload}
                         className="hidden"
                       />
@@ -2070,19 +2165,25 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
                   </div>
 
                   {settings.paymentQrUrl && (
-                    <button
-                      type="button"
-                      onClick={() => setSettings({ ...settings, paymentQrUrl: '' })}
-                      className="text-[11px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
-                    >
-                      Remove custom QR (Revert to auto UPI QR)
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        disabled={uploadingQr}
+                        onClick={handleRemoveQr}
+                        className="text-[11px] text-rose-400 hover:text-rose-300 underline cursor-pointer disabled:opacity-50"
+                      >
+                        Remove custom QR (Revert to auto-generated UPI QR)
+                      </button>
+                    </div>
                   )}
 
                   <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-[11px] text-slate-300 space-y-1">
-                    <p className="font-bold text-amber-300">💡 Investor Payment Screen:</p>
+                    <p className="font-bold text-amber-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Live Investor Display:</span>
+                    </p>
                     <p className="leading-relaxed text-slate-400">
-                      This QR Code will be prominently displayed inside the investor's payment modal. Investors can scan this code with any UPI app to transfer funds directly to your account.
+                      When investors click <strong>"Invest Now"</strong> or <strong>"Buy Lots"</strong>, this exact QR code is prominently displayed in <strong>Step 1</strong> for them to scan using PhonePe, Google Pay, Paytm, or any UPI app.
                     </p>
                   </div>
                 </div>

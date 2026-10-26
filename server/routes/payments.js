@@ -9,17 +9,18 @@ const { authenticate, requireAdmin } = require('../middleware/auth');
 // Get platform company payment details (UPI, Bank info, and Payment QR)
 router.get('/company-details', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     const settings = db.getSettings();
     const upiId = settings.upiId || 'growcapital@icici';
     const payeeName = settings.payeeName || 'Apex Capital Ventures Ltd';
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&tn=${encodeURIComponent('ApexVest Investment')}`;
 
     // If admin set a custom QR URL or image, use it; otherwise generate dynamic QR from UPI ID
     let qrUrl = settings.paymentQrUrl || null;
     if (!qrUrl && upiId) {
       try {
-        const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&tn=${encodeURIComponent('ApexVest Investment')}`;
         qrUrl = await QRCode.toDataURL(upiUri, {
-          width: 320,
+          width: 360,
           margin: 2,
           color: { dark: '#020617', light: '#ffffff' }
         });
@@ -31,6 +32,7 @@ router.get('/company-details', async (req, res) => {
     res.json({
       upiId,
       payeeName,
+      upiUri,
       companyBankName: settings.companyBankName || 'HDFC Bank Ltd',
       companyAccountNumber: settings.companyAccountNumber || '50200088991122',
       companyIfsc: settings.companyIfsc || 'HDFC0001234',
@@ -39,6 +41,43 @@ router.get('/company-details', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: 'Error retrieving payment details.' });
+  }
+});
+
+// Stream or serve payment QR directly as an image (always returns a valid image)
+router.get('/qr-image', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    const settings = db.getSettings();
+    const upiId = settings.upiId || 'growcapital@icici';
+    const payeeName = settings.payeeName || 'Apex Capital Ventures Ltd';
+    const upiUri = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&cu=INR&tn=${encodeURIComponent('ApexVest Investment')}`;
+
+    // If custom uploaded QR exists
+    if (settings.paymentQrUrl) {
+      if (settings.paymentQrUrl.startsWith('data:image')) {
+        const parts = settings.paymentQrUrl.split(',');
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+        const imgBuffer = Buffer.from(parts[1], 'base64');
+        res.set('Content-Type', mime);
+        return res.send(imgBuffer);
+      } else if (settings.paymentQrUrl.startsWith('http') || settings.paymentQrUrl.startsWith('/uploads')) {
+        return res.redirect(settings.paymentQrUrl);
+      }
+    }
+
+    // Default: generate UPI QR PNG buffer
+    const qrBuffer = await QRCode.toBuffer(upiUri, {
+      width: 360,
+      margin: 2,
+      color: { dark: '#020617', light: '#ffffff' }
+    });
+    res.set('Content-Type', 'image/png');
+    return res.send(qrBuffer);
+  } catch (err) {
+    console.error('Error generating QR image stream:', err);
+    res.status(500).send('Error generating QR image');
   }
 });
 
