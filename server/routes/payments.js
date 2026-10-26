@@ -6,6 +6,23 @@ const Razorpay = require('razorpay');
 const db = require('../database');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
+// Get platform company payment details (UPI & Bank info)
+router.get('/company-details', (req, res) => {
+  try {
+    const settings = db.getSettings();
+    res.json({
+      upiId: settings.upiId || 'growcapital@icici',
+      payeeName: settings.payeeName || 'Apex Capital Ventures Ltd',
+      companyBankName: settings.companyBankName || 'HDFC Bank Ltd',
+      companyAccountNumber: settings.companyAccountNumber || '50200088991122',
+      companyIfsc: settings.companyIfsc || 'HDFC0001234',
+      accountType: 'Current Account'
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Error retrieving payment details.' });
+  }
+});
+
 // Generate dynamic UPI QR Code and payment details for an investment
 router.get('/qr', authenticate, async (req, res) => {
   try {

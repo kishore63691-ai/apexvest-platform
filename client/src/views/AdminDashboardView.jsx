@@ -1918,9 +1918,9 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
       {activeTab === 'settings' && (
         <div className="max-w-2xl bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6 backdrop-blur-sm">
           <div>
-            <h2 className="text-lg font-bold text-white">Platform Payment Rails Settings</h2>
+            <h2 className="text-lg font-bold text-white">Platform Payment Details Settings</h2>
             <p className="text-xs text-slate-400">
-              Configure the company UPI ID, Payee Name, and online Razorpay payment gateway credentials.
+              Configure the company UPI ID, Payee Name, and Bank Account details shown to investors when making payment.
             </p>
           </div>
 
@@ -1960,45 +1960,47 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
             </div>
 
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Razorpay Gateway Configuration</span>
-                </h3>
-                <label className="flex items-center gap-2 cursor-pointer text-xs">
-                  <span className="text-slate-400">Gateway Active:</span>
+              <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Landmark className="w-3.5 h-3.5" />
+                <span>Company Bank Account Details</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Bank Name
+                  </label>
                   <input
-                    type="checkbox"
-                    checked={settings.razorpayEnabled !== false}
-                    onChange={(e) => setSettings({ ...settings, razorpayEnabled: e.target.checked })}
-                    className="w-4 h-4 accent-emerald-500 rounded"
+                    type="text"
+                    value={settings.companyBankName || ''}
+                    onChange={(e) => setSettings({ ...settings, companyBankName: e.target.value })}
+                    placeholder="HDFC Bank Ltd"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-emerald-500"
                   />
-                </label>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    IFSC Code
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.companyIfsc || ''}
+                    onChange={(e) => setSettings({ ...settings, companyIfsc: e.target.value })}
+                    placeholder="HDFC0001234"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Razorpay Key ID
+                  Account Number
                 </label>
                 <input
                   type="text"
-                  value={settings.razorpayKeyId || ''}
-                  onChange={(e) => setSettings({ ...settings, razorpayKeyId: e.target.value })}
-                  placeholder="rzp_test_..."
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">Found in your Razorpay Dashboard → Settings → API Keys.</p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Razorpay Key Secret
-                </label>
-                <input
-                  type="password"
-                  value={settings.razorpayKeySecret || ''}
-                  onChange={(e) => setSettings({ ...settings, razorpayKeySecret: e.target.value })}
-                  placeholder="••••••••••••••••"
+                  value={settings.companyAccountNumber || ''}
+                  onChange={(e) => setSettings({ ...settings, companyAccountNumber: e.target.value })}
+                  placeholder="50200088991122"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
