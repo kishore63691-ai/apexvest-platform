@@ -5,7 +5,7 @@ import {
   AlertTriangle, Check, X, Eye, Settings, FileText, ArrowRight,
   Package, Tag, Search, Filter, Image as ImageIcon, Sparkles,
   Trophy, Upload, FileCheck, ExternalLink, Gift, Shuffle,
-  ArrowDownCircle, Landmark, Smartphone
+  ArrowDownCircle, Landmark, Smartphone, RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -597,6 +597,30 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
       showToast('Platform UPI settings saved.');
     } catch (err) {
       showToast(err.message, 'error');
+    }
+  };
+
+  const [resettingData, setResettingData] = useState(false);
+
+  const handleResetAllData = async () => {
+    if (!window.confirm('⚠️ ARE YOU SURE YOU WANT TO CLEAR ALL DATA?\n\nThis action will:\n• Reset all campaign raised amounts to ₹0\n• Reset all investor counts to 0\n• Clear all payment history and transaction records\n• Purge all user portfolios and holdings\n• Delete all withdrawal requests\n\nUser logins and catalog listings will remain intact.')) {
+      return;
+    }
+    setResettingData(true);
+    try {
+      const res = await fetch('/api/admin/reset-data', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Reset failed');
+      showToast(data.message || 'All platform data has been cleared and reset to 0.');
+      fetchAllData();
+      if (onInvestmentUpdated) onInvestmentUpdated();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setResettingData(false);
     }
   };
 
@@ -1987,6 +2011,28 @@ export default function AdminDashboardView({ onInvestmentUpdated }) {
               Save Payment Settings
             </button>
           </form>
+
+          {/* Danger Zone: Reset All Platform Data */}
+          <div className="mt-8 p-6 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-4">
+            <div>
+              <h3 className="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+                <span>Danger Zone: Reset Platform Data to 0</span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                Clears all payment submissions, empties user investment portfolios, resets all business & commodity campaign raised amounts to ₹0 (0 investors), and purges all withdrawal requests. User accounts and login credentials remain safe.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleResetAllData}
+              disabled={resettingData}
+              className="px-5 py-2.5 rounded-xl bg-rose-600/30 hover:bg-rose-600/50 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>{resettingData ? 'Resetting All Data to 0...' : 'Clear All Amounts & Payment History (Reset to 0)'}</span>
+            </button>
+          </div>
         </div>
       )}
 

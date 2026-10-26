@@ -42,14 +42,14 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=800&q=80',
         description: 'Eco-friendly biodegradable jute sack manufacturing plant modernising looms for export packaging supply. Established factory with 7-year profitable track record.',
         targetAmount: 500000,
-        raisedAmount: 275000,
+        raisedAmount: 0,
         rate: 10, // ₹10 per lot
         minInvestment: 10,
         unitName: 'Lot',
         tenure: '12 Months',
         expectedReturn: '16.5% Annualized',
         riskLevel: 'Moderate',
-        investorCount: 142,
+        investorCount: 0,
         status: 'active',
         terms: 'Quarterly interest disbursement with principal redemption at maturity (12 months). Security held in industrial weaving equipment pledge.',
         createdAt: '2026-09-10T08:00:00.000Z'
@@ -62,14 +62,14 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=800&q=80',
         description: 'Smart climate-controlled hydroponic farming producing pesticide-free exotic vegetables for premier supermarket chains across Western India.',
         targetAmount: 1200000,
-        raisedAmount: 840000,
+        raisedAmount: 0,
         rate: 10, // ₹10 per lot
         minInvestment: 10,
         unitName: 'Lot',
         tenure: '18 Months',
         expectedReturn: '18.0% Annualized',
         riskLevel: 'Moderate',
-        investorCount: 218,
+        investorCount: 0,
         status: 'active',
         terms: 'Bi-monthly profit share distribution. 100% of greenhouse assets and solar pumping units hypothecated as collateral.',
         createdAt: '2026-09-12T09:30:00.000Z'
@@ -82,14 +82,14 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80',
         description: 'Decentralized 50kW solar mini-grids powering rural commercial workshops and cold storage centers with 10-year PPA off-take agreements.',
         targetAmount: 1500000,
-        raisedAmount: 1450000,
+        raisedAmount: 0,
         rate: 10,
         minInvestment: 10,
         unitName: 'Lot',
         tenure: '24 Months',
         expectedReturn: '15.2% Annualized',
         riskLevel: 'Low',
-        investorCount: 310,
+        investorCount: 0,
         status: 'active',
         terms: 'Government-backed PPA contract assignment with quarterly scheduled yields and asset buyback guarantee.',
         createdAt: '2026-09-05T14:15:00.000Z'
@@ -102,14 +102,14 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=800&q=80',
         description: 'Securitized 99.9% fine LBMA-accredited gold bullion held in insured Brinks vaults. Admin updates real-time gram rate based on spot bullion market.',
         targetAmount: 1000000,
-        raisedAmount: 650000,
+        raisedAmount: 0,
         rate: 15000, // Admin sets current rate
         minInvestment: 50,
         unitName: 'Unit (0.01g equivalent)',
         tenure: 'Flexible Liquidity',
         expectedReturn: 'Bullion Spot Appreciation + Physical Delivery Option',
         riskLevel: 'Low',
-        investorCount: 184,
+        investorCount: 0,
         status: 'active',
         terms: '100% physically backed by insured vaults. User may hold or request liquidity redemption based on active daily bullion rates.',
         createdAt: '2026-09-01T06:00:00.000Z'
@@ -122,14 +122,14 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1624365168968-f283a546c1a8?auto=format&fit=crop&w=800&q=80',
         description: 'Institutional grade 99.9% fine silver bars stored in audited depository. Industrial green transition demands driving long-term value.',
         targetAmount: 600000,
-        raisedAmount: 310000,
+        raisedAmount: 0,
         rate: 950, // Silver rate set by Admin
         minInvestment: 50,
         unitName: 'Unit (10g equivalent)',
         tenure: 'Flexible Liquidity',
         expectedReturn: 'Commodity Upside + Storage Verification',
         riskLevel: 'Moderate',
-        investorCount: 95,
+        investorCount: 0,
         status: 'active',
         terms: 'Audited monthly by independent chartered inspectors. Full custody certificates issued.',
         createdAt: '2026-09-08T11:20:00.000Z'
@@ -142,147 +142,22 @@ function getInitialData() {
         image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80',
         description: 'Prime fractional commercial land acquisition adjacent to Outer Ring Road logistics corridor. Clear title with DTCP approved boundary zoning.',
         targetAmount: 5000000,
-        raisedAmount: 3450000,
+        raisedAmount: 0,
         rate: 25000, // Rate per square yard fraction set by Admin
         minInvestment: 500,
         unitName: 'Sq. Yard Fraction',
         tenure: '36 Months',
         expectedReturn: 'Capital Appreciation 20-25% Target',
         riskLevel: 'Moderate',
-        investorCount: 167,
+        investorCount: 0,
         status: 'active',
         terms: 'Fractional undivided share of land registered through SPV custodial deed with exit upon commercial development lease.',
         createdAt: '2026-09-02T16:00:00.000Z'
       }
     ],
-    payments: [
-      {
-        id: 'PAY-10025-01',
-        userId: 'USR-10025',
-        userName: 'Rahul Sharma',
-        userEmail: 'investor@demo.com',
-        investmentId: 'COMM-201',
-        investmentTitle: 'Digital 24K Physical Gold Vault',
-        investmentType: 'community',
-        amount: 500,
-        lots: 0.0333,
-        rateAtInvestment: 15000,
-        transactionId: 'TXN123456789',
-        paymentDate: '2026-10-01',
-        screenshotUrl: null,
-        status: 'confirmed',
-        adminNotes: 'Verified against bank credit ledger',
-        rejectionReason: '',
-        createdAt: '2026-10-01T10:15:00.000Z',
-        verifiedAt: '2026-10-01T11:00:00.000Z',
-        verifiedBy: 'USR-ADMIN-01'
-      },
-      {
-        id: 'PAY-10025-02',
-        userId: 'USR-10025',
-        userName: 'Rahul Sharma',
-        userEmail: 'investor@demo.com',
-        investmentId: 'BIZ-101',
-        investmentTitle: 'ABC Jute Industries',
-        investmentType: 'business',
-        amount: 2500,
-        lots: 250,
-        rateAtInvestment: 10,
-        transactionId: 'TXN987654321',
-        paymentDate: '2026-10-03',
-        screenshotUrl: null,
-        status: 'confirmed',
-        adminNotes: 'IMPS reference verified',
-        rejectionReason: '',
-        createdAt: '2026-10-03T14:30:00.000Z',
-        verifiedAt: '2026-10-03T15:00:00.000Z',
-        verifiedBy: 'USR-ADMIN-01'
-      },
-      {
-        id: 'PAY-DEMO-PENDING',
-        userId: 'USR-10025',
-        userName: 'Rahul Sharma',
-        userEmail: 'investor@demo.com',
-        investmentId: 'BIZ-102',
-        investmentTitle: 'Green Agro Hydroponics Hub',
-        investmentType: 'business',
-        amount: 5000,
-        lots: 500,
-        rateAtInvestment: 10,
-        transactionId: 'UTR883921004',
-        paymentDate: '2026-10-07',
-        screenshotUrl: null,
-        status: 'pending',
-        adminNotes: '',
-        rejectionReason: '',
-        createdAt: '2026-10-07T08:00:00.000Z',
-        verifiedAt: null,
-        verifiedBy: null
-      }
-    ],
-    user_investments: [
-      {
-        id: 'INV-10025',
-        userId: 'USR-10025',
-        investmentId: 'COMM-201',
-        investmentTitle: 'Digital 24K Physical Gold Vault',
-        investmentType: 'community',
-        paymentId: 'PAY-10025-01',
-        transactionId: 'TXN123456789',
-        amount: 500,
-        lots: 0.0333,
-        rateAtInvestment: 15000,
-        purchaseDate: '2026-10-01T11:00:00.000Z',
-        currentRate: 15000,
-        currentValue: 500,
-        status: 'confirmed'
-      },
-      {
-        id: 'INV-10026',
-        userId: 'USR-10025',
-        investmentId: 'BIZ-101',
-        investmentTitle: 'ABC Jute Industries',
-        investmentType: 'business',
-        paymentId: 'PAY-10025-02',
-        transactionId: 'TXN987654321',
-        amount: 2500,
-        lots: 250,
-        rateAtInvestment: 10,
-        purchaseDate: '2026-10-03T15:00:00.000Z',
-        currentRate: 10,
-        currentValue: 2568, // slightly accrued return
-        status: 'confirmed'
-      }
-    ],
-    notifications: [
-      {
-        id: 'NOTIF-01',
-        userId: 'USR-10025',
-        title: 'Investment Confirmed',
-        message: 'Your investment of ₹2,500 in ABC Jute Industries has been verified and confirmed by Admin.',
-        type: 'success',
-        isRead: false,
-        createdAt: '2026-10-03T15:01:00.000Z'
-      },
-      {
-        id: 'NOTIF-02',
-        userId: 'USR-10025',
-        title: 'Payment Under Verification',
-        message: 'Payment of ₹5,000 (UTR883921004) submitted for Green Agro Hydroponics Hub. Admin verification in progress.',
-        type: 'info',
-        isRead: false,
-        createdAt: '2026-10-07T08:00:00.000Z'
-      },
-      {
-        id: 'NOTIF-ADMIN-01',
-        userId: 'admin',
-        title: 'New Payment Pending Verification',
-        message: 'Rahul Sharma submitted payment of ₹5,000 for Green Agro Hydroponics Hub (Ref: UTR883921004).',
-        type: 'alert',
-        isRead: false,
-        createdAt: '2026-10-07T08:00:00.000Z'
-      }
-    ],
+    payments: [],
+    user_investments: [],
+    notifications: [],
     withdrawals: [],
     settings: {
       upiId: 'growcapital@icici',
@@ -1072,6 +947,47 @@ class Database {
 
     this.write(data);
     return { payment: newPayment, userInvestment: newUserInvestment, investment };
+  }
+
+  resetAllData() {
+    const data = this.read();
+    data.payments = [];
+    data.user_investments = [];
+    data.withdrawals = [];
+    data.notifications = [];
+
+    const initial = getInitialData();
+    const existingById = new Map((data.investments || []).map(i => [i.id, i]));
+
+    // Standard investments with clean 0 state
+    const allInvestments = initial.investments.map(initInv => {
+      const existing = existingById.get(initInv.id);
+      return {
+        ...initInv,
+        rate: existing ? existing.rate : initInv.rate, // keep custom live rates
+        raisedAmount: 0,
+        investorCount: 0,
+        status: 'active',
+        winner: null
+      };
+    });
+
+    // Keep any custom investments added by admin, also reset to 0
+    for (const inv of (data.investments || [])) {
+      if (!allInvestments.some(i => i.id === inv.id)) {
+        allInvestments.push({
+          ...inv,
+          raisedAmount: 0,
+          investorCount: 0,
+          status: 'active',
+          winner: null
+        });
+      }
+    }
+
+    data.investments = allInvestments;
+    this.write(data);
+    return data;
   }
 }
 

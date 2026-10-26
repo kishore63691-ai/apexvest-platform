@@ -100,6 +100,26 @@ router.put('/settings', requireAdmin, (req, res) => {
   }
 });
 
+// Reset all platform transaction & investment data to 0
+router.post('/reset-data', requireAdmin, (req, res) => {
+  try {
+    const data = db.resetAllData();
+    res.json({
+      success: true,
+      message: 'All investment amounts, payment histories, user portfolios, and withdrawal requests have been completely cleared and reset to 0.',
+      stats: {
+        investmentsCount: data.investments.length,
+        paymentsCount: data.payments.length,
+        userInvestmentsCount: data.user_investments.length,
+        withdrawalsCount: data.withdrawals.length
+      }
+    });
+  } catch (err) {
+    console.error('Reset data error:', err);
+    res.status(500).json({ message: 'Failed to reset platform data.' });
+  }
+});
+
 // --- Admin Withdrawal Requests Endpoints ---
 
 // Get all withdrawal requests

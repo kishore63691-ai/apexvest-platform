@@ -254,8 +254,9 @@ router.post('/:id/reject', requireAdmin, (req, res) => {
 router.get('/razorpay/config', authenticate, (req, res) => {
   try {
     const settings = db.getSettings();
+    const keyId = process.env.RAZORPAY_KEY_ID || settings.razorpayKeyId || 'rzp_test_1DP5mmOlF5G5ag';
     res.json({
-      keyId: settings.razorpayKeyId || 'rzp_test_1DP5mmOlF5G5ag',
+      keyId,
       enabled: settings.razorpayEnabled !== false
     });
   } catch (err) {
@@ -294,8 +295,8 @@ router.post('/razorpay/create-order', authenticate, async (req, res) => {
     }
 
     const settings = db.getSettings();
-    const keyId = settings.razorpayKeyId || 'rzp_test_1DP5mmOlF5G5ag';
-    const keySecret = settings.razorpayKeySecret || 's8Yd3p4lFj3n9Z1x7q2k5m0b';
+    const keyId = process.env.RAZORPAY_KEY_ID || settings.razorpayKeyId || 'rzp_test_1DP5mmOlF5G5ag';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || settings.razorpayKeySecret || 's8Yd3p4lFj3n9Z1x7q2k5m0b';
 
     let orderId = `order_${Date.now().toString().slice(-8)}`;
 
@@ -359,7 +360,7 @@ router.post('/razorpay/verify', authenticate, (req, res) => {
     }
 
     const settings = db.getSettings();
-    const keySecret = settings.razorpayKeySecret || 's8Yd3p4lFj3n9Z1x7q2k5m0b';
+    const keySecret = process.env.RAZORPAY_KEY_SECRET || settings.razorpayKeySecret || 's8Yd3p4lFj3n9Z1x7q2k5m0b';
 
     // Verify signature if provided and order ID exists
     let isValidSignature = true;
